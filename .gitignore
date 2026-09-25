@@ -6,10 +6,10 @@ __pycache__/
 db.sqlite3
 media/
 staticfiles/
-static/
+logs/
+*.log
 .pytest_cache/
 .coverage
 htmlcov/
-*.log
 .vscode/
 .idea/
