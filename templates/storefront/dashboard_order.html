@@ -1,0 +1,82 @@
+{% extends "storefront/base.html" %}{% load currency %}{% block title %}{{ order.order_number }} — Dashboard — Nismita{% endblock %}
+{% block content %}<section class="od-wrap">
+<a class="od-back" href="/dashboard/orders/">← All orders</a>
+<div class="od-head">
+  <div>
+    <h2>{{ order.order_number }}</h2>
+    <p class="od-meta">Placed {{ order.created_at|date:"d M Y, h:i A" }} · {{ order.customer.username }}
+      {% if order.confirmed_by %}· confirmed by {{ order.confirmed_by.username }}{% endif %}</p>
+  </div>
+  <div class="od-badges">
+    <span class="st st-{{ order.status|lower }}">{{ order.get_status_display }}</span>
+    <span class="st st-pay-{{ order.payment_status|lower }}">{{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}</span>
+  </div>
+</div>
+
+<div class="timeline">
+  {% for step, done in timeline %}<div class="tl-step {% if done %}done{% endif %}"><i></i><span>{{ step }}</span></div>{% endfor %}
+</div>
+
+<div class="od-grid">
+  <div class="od-card">
+    <h4>👤 Customer</h4>
+    <p><b>{{ order.full_name|default:order.customer.username }}</b><br>{{ order.customer.email }}<br>📞 {{ order.phone|default:"—" }}
+    {% if order.whatsapp_number %}<br>💬 WhatsApp: {{ order.whatsapp_number }}{% endif %}</p>
+  </div>
+  <div class="od-card">
+    <h4>📍 Delivery</h4>
+    <p>{{ order.address_line }}{% if order.landmark %}, near {{ order.landmark }}{% endif %}<br>
+    {{ order.city }}, {{ order.district }}<br>{{ order.province }}, Nepal</p>
+  </div>
+  <div class="od-card">
+    <h4>💳 Payment</h4>
+    <p><b>{{ order.get_payment_method_display }}</b> — {{ order.get_payment_status_display }}<br>
+    {% if order.payment_reference %}Ref: <code>{{ order.payment_reference }}</code><br>{% endif %}
+    {% if order.payment_screenshot %}
+      <a href="{{ order.payment_screenshot.url }}" target="_blank"><img class="od-shot" src="{{ order.payment_screenshot.url }}" alt="Payment screenshot"></a>
+      <small><a href="{{ order.payment_screenshot.url }}" target="_blank">🔍 Open full screenshot</a></small>
+    {% else %}<small class="od-muted">No screenshot uploaded — check WhatsApp.</small>{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="od-card od-items-card">
+  <h4>🛍️ Items ({{ order.items.count }})</h4>
+  <div class="od-items">
+    <table><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Total</th></tr>
+    {% for i in order.items.all %}<tr>
+      <td><b>{{ i.product_name }}</b><small>{{ i.sku }}</small></td>
+      <td>{{ i.quantity }}</td>
+      <td>{{ i.unit_price|money }}</td><td><b>{{ i.total_price|money }}</b></td>
+    </tr>{% endfor %}</table>
+  </div>
+  <div class="od-totals">
+    <div><span>Subtotal</span><b>{{ order.subtotal|money }}</b></div>
+    <div><span>Delivery</span><b>{{ order.shipping_cost|money }}</b></div>
+    {% if order.discount %}<div><span>Discount</span><b>− {{ order.discount|money }}</b></div>{% endif %}
+    <div class="grand"><span>Total</span><b>{{ order.total|money }}</b></div>
+  </div>
+</div>
+
+<div class="od-card od-actions">
+  <h4>⚡ Actions</h4>
+  <div class="act-btns">
+    {% if order.status == 'PENDING' %}
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="confirm">✅ Verify payment & Confirm</button></form>
+    <form method="post" onsubmit="return confirm('Reject payment and cancel this order?')">{% csrf_token %}<button class="btn dark" name="action" value="reject_payment">❌ Reject & Cancel</button></form>
+    {% elif order.status == 'CONFIRMED' %}
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="process">🛠️ Move to Processing</button></form>
+    {% elif order.status == 'PROCESSING' %}
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="ship">🚚 Mark Shipped</button></form>
+    {% elif order.status == 'SHIPPED' %}
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="deliver">📬 Mark Delivered</button></form>
+    {% else %}
+    <span class="od-muted">No actions available — order is {{ order.get_status_display|lower }}.</span>
+    {% endif %}
+    {% if order.payment_status == 'PENDING' and order.status == 'PENDING' %}
+    <form method="post">{% csrf_token %}<button class="btn ghost" name="action" value="verify_payment">Mark payment verified only</button></form>
+    {% endif %}
+  </div>
+</div>
+</section>{% include 'storefront/_dash_footer.html' %}
+{% endblock %}

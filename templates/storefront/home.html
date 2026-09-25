@@ -1,0 +1,139 @@
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}
+{% block seo_title %}Candle & Cold Process Soap Materials Supplier in Nepal | Nismita Craft Studio{% endblock %}
+{% block seo_description %}Buy candle and cold process soap making materials in Nepal from Nismita Craft Studio. Shop soy wax, soap bases, wicks, silicone molds, colours and crafting tools with delivery across Nepal.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ request.build_absolute_uri }}#organization",
+      "name": "Nismita Craft Studio",
+      "url": "{{ request.build_absolute_uri }}",
+      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}",
+      "description": "Candle and cold process soap making material supplier serving customers across Nepal.",
+      "founder": {"@type": "Person", "name": "Sumita Basel"},
+      "telephone": "+977-970-8909514",
+      "address": {"@type": "PostalAddress", "streetAddress": "Narephate-32", "addressLocality": "Kathmandu", "addressCountry": "NP"},
+      "sameAs": ["https://www.instagram.com/nismita_craft_studio", "https://www.tiktok.com/@nismita_craft_studio"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.build_absolute_uri }}#website",
+      "url": "{{ request.build_absolute_uri }}",
+      "name": "Nismita Craft Studio",
+      "publisher": {"@id": "{{ request.build_absolute_uri }}#organization"},
+      "inLanguage": "en-NP"
+    },
+    {
+      "@type": "Store",
+      "@id": "{{ request.build_absolute_uri }}#store",
+      "name": "Nismita Craft Studio",
+      "url": "{{ request.build_absolute_uri }}",
+      "parentOrganization": {"@id": "{{ request.build_absolute_uri }}#organization"},
+      "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}",
+      "telephone": "+977-970-8909514",
+      "priceRange": "NPR",
+      "currenciesAccepted": "NPR",
+      "paymentAccepted": "QR payment",
+      "areaServed": {"@type": "Country", "name": "Nepal"},
+      "address": {"@type": "PostalAddress", "streetAddress": "Narephate-32", "addressLocality": "Kathmandu", "addressCountry": "NP"}
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<style>
+/* Owner photo hero — clean, personal, brand-forward */
+.hero-owner{position:relative;overflow:hidden;text-align:center;border-radius:24px;background:linear-gradient(155deg,#2a1b4d 0%,#5b34a8 55%,#8a5fd4 100%);color:#fff;padding:32px 30px 26px;box-shadow:0 30px 58px -22px rgba(91,52,168,.55);transition:transform .4s cubic-bezier(.22,.68,.32,1.1)}
+.hero-owner:hover{transform:translateY(-4px)}
+.hero-owner::before{content:'';position:absolute;inset:0;background:radial-gradient(380px 200px at 85% -10%,rgba(255,255,255,.22),transparent 60%),radial-gradient(300px 240px at -14% 110%,rgba(201,162,75,.35),transparent 60%);pointer-events:none}
+.hero-owner>*{position:relative;z-index:1}
+.oh-photo{width:min(92%,190px);height:250px;object-position:center 18%;border-radius:18px;border:3px solid rgba(255,255,255,.6);box-shadow:0 18px 32px -14px rgba(0,0,0,.55);object-fit:cover;display:block;margin:0 auto 10px;transition:transform .5s cubic-bezier(.22,.68,.32,1.1)}
+.hero-owner:hover .oh-photo{transform:scale(1.02)}
+.oh-badge{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px;padding:7px 15px;font-size:11.5px;font-weight:700;letter-spacing:.07em;box-shadow:0 6px 16px -8px rgba(0,0,0,.45)}
+.oh-name{font-weight:800;font-size:24px;letter-spacing:.24em;line-height:1.1;margin-top:4px;text-align:center}
+.oh-name small{display:block;font-size:10px;letter-spacing:.5em;color:#e2d2ff;margin-top:6px;font-weight:600}
+.oh-tag{margin:0;font-size:14px;line-height:1.6;color:#d5c8f5;max-width:380px;margin-left:auto;margin-right:auto;text-align:center}
+.oh-chips{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;padding:0;margin:6px 0 0}
+.oh-chips li{border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);transition:.26s cubic-bezier(.22,.68,.32,1.1)}
+.oh-chips li:hover{background:#fff;border-color:#fff;transform:translateY(-3px) scale(1.04);box-shadow:0 12px 22px -10px rgba(0,0,0,.55)}
+.oh-chips a{display:block;padding:7px 13px;font-size:12px;font-weight:600;color:inherit;text-decoration:none}
+.oh-chips li:hover a{color:var(--purple-dark)}
+.oh-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:7px 16px;width:100%;margin-top:10px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.28);font-size:11.5px;color:#cbbcee;font-weight:600}
+.oh-spark{position:absolute;color:rgba(255,255,255,.5);font-size:16px;animation:hbTwinkle 2.6s ease-in-out infinite;pointer-events:none}
+.oh-spark.s1{top:16px;right:20px}
+.oh-spark.s2{bottom:90px;left:18px;animation-delay:.8s;font-size:12px}
+.oh-spark.s3{top:42%;right:14px;animation-delay:1.6s;font-size:13px}
+@keyframes hbTwinkle{0%,100%{opacity:.2;transform:scale(.75)}50%{opacity:1;transform:scale(1.2)}}
+@media(prefers-reduced-motion:reduce){.oh-photo,.oh-spark{animation:none}}
+@media(max-width:640px){
+  .hero-owner{padding:24px 16px 20px;border-radius:20px}
+  .oh-photo{width:min(80%,140px)}
+  .oh-name{font-size:18px;letter-spacing:.18em}
+  .oh-name small{font-size:8.5px;letter-spacing:.4em}
+  .oh-tag{font-size:13px}
+  .oh-chips a{padding:6px 10px;font-size:11px}
+  .oh-foot{font-size:10.5px;gap:5px 10px}
+}
+.hero-quote{margin:18px 0 0;background:#fff;border:1px solid var(--line);border-left:5px solid var(--purple-deep);border-radius:0 18px 18px 0;padding:16px 20px;font-family:Georgia,serif;font-style:italic;font-size:16.5px;line-height:1.65;color:var(--ink);box-shadow:0 14px 30px -20px rgba(91,52,168,.55)}
+.hero-quote cite{display:block;margin-top:9px;font-family:"Jost","Segoe UI",sans-serif;font-style:normal;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple-dark)}
+@media(max-width:640px){.hero-quote{font-size:14.5px;padding:13px 16px;margin-top:14px}.oh-photo{height:210px}}
+</style>
+<section class="hero"><div class="hero-inner">
+  <div>
+    <span class="eyebrow">NISMITA CRAFT STUDIO</span>
+    <h1>Candle &amp; Cold Process Soap Materials Supplier in Nepal</h1>
+    <p class="hero-subtitle">Shop quality candle wax, cold process soap bases, wicks, silicone molds, fragrance oils, colours, glitter and crafting tools. Delivered across Nepal for home makers, studios and growing businesses.</p>
+    <blockquote class="hero-quote">“I test every wax, wick, colour and mold myself — if it isn't good enough for my own candles, it never reaches your studio.”<cite>— Sumita Basel · Founder &amp; Maker</cite></blockquote>
+    <div class="hero-cta"><a class="btn" href="/shop/">Go to Shop</a><a class="btn ghost" href="/about/">Learn more about us</a></div>
+    <ul class="hero-points">
+      <li>🚚 Dispatch in 5–6 working days</li>
+      <li>💬 Pay by QR · Confirm on WhatsApp</li>
+      <li>🇳🇵 Delivering all across Nepal</li>
+    </ul>
+  </div>
+  <div class="hero-owner">
+    <span class="oh-spark s1">✦</span><span class="oh-spark s2">✧</span><span class="oh-spark s3">✦</span>
+    <img class="oh-photo" src="{% static 'img/Owner photo/owner.jpeg' %}" alt="Sumita Basel, founder of Nismita Craft Studio">
+    <span class="oh-badge">🇳🇵 Handmade in Kathmandu</span>
+    <div class="oh-name">SUMITA BASEL<small>FOUNDER · CANDLE MAKER</small></div>
+    <p class="oh-tag">“From blending the wax to packing your parcel, every order gets my personal touch.”</p>
+    <ul class="oh-chips">
+      <li><a href="/shop/">🕯️ Soy Wax</a></li>
+      <li><a href="/shop/">🧵 Cotton Wicks</a></li>
+      <li><a href="/shop/">🍮 Silicone Molds</a></li>
+      <li><a href="/shop/">🎨 Mica Colours</a></li>
+      <li><a href="/shop/">✨ Glitter</a></li>
+    </ul>
+    <div class="oh-foot"><span>✓ Verified supplier</span><span>🚚 5–6 day dispatch</span><span>↩️ 7-day returns</span></div>
+  </div>
+</div></section>
+<div class="notice" data-reveal>Order dispatch update: All orders will be shipped within 5-6 working days once confirmed. Delivery timelines may vary by location and courier partner.</div>
+<section class="section seo-supply-section" data-reveal>
+  <div class="section-head"><div><h2>Candle &amp; Cold Process Soap Supplies Across Nepal</h2><div class="sub">Everything you need to make candles and cold process soap at home or in your studio.</div></div><a class="see-all" href="/shop/">Browse all materials →</a></div>
+  <div class="grid seo-supply-grid">
+    <article class="trust-item"><span>🕯️</span><h3>Candle Making Materials</h3><p>Choose soy wax, cotton or wooden wicks, fragrance oils, silicone candle molds, mica colours, glitter and practical pouring tools for handmade candles.</p><a class="see-all" href="/shop/?search=candle">Explore candle supplies →</a></article>
+    <article class="trust-item"><span>🧼</span><h3>Cold Process Soap Materials</h3><p>Find cold process soap bases, oils, lye, additives, colourants, fragrance, soap molds and essential tools for making handmade cold process soap in Nepal.</p><a class="see-all" href="/shop/?search=soap">Explore soap supplies →</a></article>
+    <article class="trust-item"><span>🇳🇵</span><h3>Reliable Delivery Across Nepal</h3><p>Order candle and soap crafting essentials from Kathmandu for delivery throughout Nepal. Every order has a flat Rs 150 delivery charge and QR payment confirmed on WhatsApp.</p><a class="see-all" href="/contact/">Ask about delivery →</a></article>
+  </div>
+  <h3 class="seo-answer-title">Looking for candle and soap making suppliers in Nepal?</h3>
+  <div class="seo-answer"><p>Nismita Craft Studio supplies candle making and cold process soap making materials to makers and businesses across Nepal. Browse our shop for wax, soap bases, wicks, molds, colours, fragrance oils, glitter and essential tools. Our materials are selected for reliable crafting results, and our Kathmandu team dispatches confirmed orders throughout the country.</p><p>New to making candles or soap? Start with the supplies for your chosen process, contact us on WhatsApp for product guidance, and choose QR payment for a straightforward order confirmation process.</p></div>
+</section>
+<section class="section" data-reveal>
+  <div class="section-head"><div><h2>Featured Products</h2><div class="sub">Handpicked bestsellers this week</div></div><a class="see-all" href="/shop/?ordering=-price">Browse all →</a></div>
+  <div class="grid">{% for p in featured %}{% include "storefront/_card.html" with p=p %}{% empty %}<div class="empty"><div class="empty-ico">🕯️</div><h3>Nothing featured right now</h3><p>Check back soon — new candle-making supplies land every week.</p><a class="btn" href="/shop/">Browse all products →</a></div>{% endfor %}</div>
+</section>
+<section class="section" data-reveal>
+  <div class="section-head"><div><h2>Trend This Year</h2><div class="sub">Fresh arrivals for candle makers</div></div><a class="see-all" href="/shop/">See everything →</a></div>
+  <div class="grid">{% for p in latest %}{% include "storefront/_card.html" with p=p %}{% empty %}<p>No products yet.</p>{% endfor %}</div>
+</section>
+<section class="trust-strip" data-reveal><div class="trust-inner">
+  <div class="trust-item"><span>🎨</span><b>Maker-grade quality</b><p>Mica colours, soy wax and molds tested for a clean, even pour.</p></div>
+  <div class="trust-item"><span>🚚</span><b>Fast dispatch</b><p>Confirmed orders leave the studio within 5–6 working days.</p></div>
+  <div class="trust-item"><span>💬</span><b>Order on WhatsApp</b><p>Send your payment screenshot — we verify and confirm quickly.</p></div>
+  <div class="trust-item"><span>↩️</span><b>Easy 7-day returns</b><p>Damaged or wrong item? We replace or refund it.</p></div>
+</div></section>
+{% endblock %}

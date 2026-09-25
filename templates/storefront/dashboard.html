@@ -1,0 +1,94 @@
+{% extends 'storefront/base.html' %}{% load currency %}
+{% block title %}Dashboard — Nismita Admin{% endblock %}
+{% block content %}
+{% include 'storefront/_dashboard_styles.html' %}
+
+<section class='dash-page'>
+  <div class='dash-header'>
+    <div><h1><span class='icon'>🛠️</span> Dashboard</h1><p class='subtitle'>Your store at a glance — open a section below for details.</p></div>
+    <div class='dash-actions'>
+      <a href='/dashboard/orders/' class='btn btn-primary'>📦 Manage Orders</a>
+      <a href='/dashboard/product/add/' class='btn btn-primary'>➕ Add Product</a>
+      <form method='post' action='{% url "storefront:customer-preview-start" %}' class='customer-preview-form'>
+        {% csrf_token %}
+        <button type='submit' class='btn btn-secondary customer-preview-button'>👁️ View Customer Site</button>
+      </form>
+      <a href='/admin/' class='btn btn-secondary'>⚙️ Admin</a>
+      <a href='/logout/' class='btn btn-secondary' style='color:var(--danger);border-color:var(--danger)'>↩️ Logout</a>
+    </div>
+  </div>
+
+  {% if stats.pending_pay or low_stock %}
+  <div class='notice-strip'>
+    {% if stats.pending_pay %}<a href='/dashboard/orders/?payment_status=PENDING'>⚠️ {{ stats.pending_pay }} payment{{ stats.pending_pay|pluralize }} waiting for your check — verify before shipping →</a>{% endif %}
+    {% if low_stock %}<a href='/dashboard/products/'>📉 {{ low_stock|length }} product{{ low_stock|length|pluralize }} low on stock — restock soon →</a>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class='stats-grid'>
+    <div class='stat-card revenue'><div class='stat-icon'>💰</div><div class='stat-content'><span class='stat-label'>Revenue (all time)</span><span class='stat-value'>{{ stats.revenue|money }}</span><span class='stat-sub'>cancelled orders excluded</span></div></div>
+    <div class='stat-card orders'><div class='stat-icon'>📋</div><div class='stat-content'><span class='stat-label'>Orders (all time)</span><span class='stat-value'>{{ stats.orders }}</span><span class='stat-sub'>{{ stats.confirmed }} confirmed</span></div></div>
+    <div class='stat-card pending'><div class='stat-icon'>⏳</div><div class='stat-content'><span class='stat-label'>Payments to check</span><span class='stat-value'>{{ stats.pending_pay }}</span><span class='stat-sub'><a href='/dashboard/orders/?payment_status=PENDING' style='color:inherit'>Open the list →</a></span></div></div>
+    <div class='stat-card today'><div class='stat-icon'>📈</div><div class='stat-content'><span class='stat-label'>Today's sales</span><span class='stat-value'>{{ stats.today_revenue|money }}</span><span class='stat-sub'>{{ stats.today_orders }} order{{ stats.today_orders|pluralize }} today</span></div></div>
+    <div class='stat-card people'><div class='stat-icon'>👥</div><div class='stat-content'><span class='stat-label'>Customers</span><span class='stat-value'>{{ customers }}</span><span class='stat-sub'>registered buyers</span></div></div>
+    <div class='stat-card confirmed'><div class='stat-icon'>🛍️</div><div class='stat-content'><span class='stat-label'>Products</span><span class='stat-value'>{{ products }}</span><span class='stat-sub'><a href='/dashboard/products/' style='color:inherit'>Manage stock →</a></span></div></div>
+  </div>
+
+  <div class='quick-actions'>
+    <a href='/dashboard/orders/' class='quick-action'><div class='icon' style='background:var(--info-light)'>📦</div><div><div class='label'>All orders</div><div class='desc'>View & update every order</div></div></a>
+    <a href='/dashboard/orders/?payment_status=PENDING' class='quick-action'><div class='icon' style='background:var(--warning-light)'>🔍</div><div><div class='label'>Verify payments</div><div class='desc'>Check before shipping</div></div></a>
+    <a href='/dashboard/orders/?status=PENDING' class='quick-action'><div class='icon' style='background:var(--purple-light)'>⏳</div><div><div class='label'>New orders</div><div class='desc'>Waiting to be confirmed</div></div></a>
+    <a href='/dashboard/product/add/' class='quick-action'><div class='icon' style='background:var(--success-light)'>➕</div><div><div class='label'>Add product</div><div class='desc'>Put a new item in the shop</div></div></a>
+    <a href='/dashboard/products/' class='quick-action'><div class='icon' style='background:var(--purple-light)'>🛍️</div><div><div class='label'>Products & stock</div><div class='desc'>Prices, stock & low items</div></div></a>
+    <a href='/dashboard/report/' class='quick-action'><div class='icon' style='background:var(--success-light)'>📊</div><div><div class='label'>Sales report</div><div class='desc'>Daily sales & best sellers</div></div></a>
+  </div>
+
+  <div class='section-header'><h3>📋 Recent orders <span class='badge'>{{ recent|length }}</span></h3><a href='/dashboard/orders/' class='btn btn-secondary btn-sm'>View all orders →</a></div>
+  <div class='table-card'>
+    <div class='table-scroll'>
+      <table class='modern-table'>
+        <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for o in recent %}
+          <tr>
+            <td><a href='/dashboard/order/{{ o.id }}/' class='order-link'>{{ o.order_number }}</a></td>
+            <td>{{ o.created_at|date:'M d' }}</td>
+            <td>{{ o.customer.username }}</td>
+            <td><span style='font-weight:500'>{{ o.payment_method }}</span><br><span class='status-badge status-{{ o.payment_status|lower }}' style='font-size:9px;padding:2px 6px'>{{ o.payment_status }}</span></td>
+            <td><span style='font-weight:700'>{{ o.total|money }}</span></td>
+            <td><span class='status-badge status-{{ o.status|lower }}'><span class='dot'></span>{{ o.status }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan='6'><div class='empty-state'><p>No orders yet</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class='mobile-cards'>
+      {% for o in recent %}
+      <div class='mobile-order-card'>
+        <div class='mobile-order-header'>
+          <a href='/dashboard/order/{{ o.id }}/' class='mobile-order-id'>{{ o.order_number }}</a>
+          <span class='status-badge status-{{ o.status|lower }}'><span class='dot'></span>{{ o.status }}</span>
+        </div>
+        <div class='mobile-order-body'>
+          <div class='mobile-order-item'><span class='label'>Customer</span><span class='value'>{{ o.customer.username }}</span></div>
+          <div class='mobile-order-item'><span class='label'>Date</span><span class='value'>{{ o.created_at|date:'M d, Y' }}</span></div>
+          <div class='mobile-order-item'><span class='label'>Payment</span><span class='value'>{{ o.payment_method }}</span></div>
+          <div class='mobile-order-item'><span class='label'>Payment check</span><span class='status-badge status-{{ o.payment_status|lower }}' style='font-size:9px;padding:2px 6px'>{{ o.payment_status }}</span></div>
+        </div>
+        <div class='mobile-order-footer'>
+          <span class='mobile-order-total'>{{ o.total|money }}</span>
+          <a href='/dashboard/order/{{ o.id }}/' class='btn btn-primary btn-sm'>View →</a>
+        </div>
+      </div>
+      {% empty %}
+      <div class='empty-state'><p>No orders yet</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% include 'storefront/_dash_footer.html' %}
+{% endblock %}

@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block seo_title %}{% block title %}Candle & Cold Process Soap Materials Supplier in Nepal | Nismita Craft Studio{% endblock %}{% endblock %}</title>
+<meta name="description" content="{% block seo_description %}Shop candle and cold process soap making materials in Nepal: soy wax, soap bases, wicks, silicone molds, fragrance oils, colours and tools. Delivered across Nepal.{% endblock %}">
+<meta name="robots" content="{% block seo_robots %}index,follow,max-image-preview:large{% endblock %}">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:site_name" content="Nismita Craft Studio">
+<meta property="og:locale" content="en_NP">
+<meta property="og:title" content="{% block og_title %}{{ self.seo_title }}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ self.seo_description }}{% endblock %}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}">{% endblock %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% block twitter_title %}{{ self.seo_title }}{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}{{ self.seo_description }}{% endblock %}">
+{% block twitter_image %}<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}">{% endblock %}
+{% block structured_data %}{% endblock %}
+<link rel="icon" href="{% static 'img/logo.png' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/store.css' %}">
+<style>
+/* Mobile Auth Buttons */
+@media(max-width:768px){
+  .mb-auth-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:#453a5e;padding:4px 0;border-radius:10px;text-decoration:none;min-height:44px;justify-content:center}
+  .mb-auth-btn span{font-size:20px;line-height:1}
+  .mb-auth-btn:active{transform:scale(0.95);background:rgba(99,102,241,0.1)}
+  .mb-signup{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border-radius:10px}
+  .mb-signup span{color:#fff}
+  .mb-signup:active{background:linear-gradient(135deg,#4f46e5,#4338ca)}
+}
+.customer-preview-form{margin:0;display:inline-flex}
+.customer-preview-bar{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:9px 18px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:13px;font-weight:600;text-align:center;position:relative;z-index:130}
+.customer-preview-bar form{margin:0}
+.customer-preview-return{background:#fff;color:#4f46e5;border:0;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(30,20,80,.2);min-height:36px}
+.customer-preview-return:hover{background:#f5f3ff;transform:translateY(-1px)}
+@media(max-width:640px){.customer-preview-bar{padding:8px 10px;gap:8px;font-size:11px}.customer-preview-return{padding:7px 12px}.customer-preview-button{width:100%;justify-content:center}}
+/* Cart badge in header */
+.hicon{position:relative}
+.hicon .count{position:absolute;top:-4px;right:-8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 3px 8px rgba(220,38,38,.4);line-height:1}
+.hero-subtitle{max-width:660px;margin:16px 0;color:#4b425f;font-size:16px;line-height:1.7}
+.seo-supply-grid{grid-template-columns:repeat(3,1fr)}
+.seo-supply-grid .trust-item{height:100%}
+.seo-supply-grid h3{margin:7px 0 5px}
+.seo-supply-grid p{margin:0 0 12px}
+.seo-answer-title{max-width:1000px;margin:32px auto 12px}
+.seo-answer{max-width:1000px;margin:auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 26px;line-height:1.8;color:#4b425f;box-shadow:0 12px 30px -26px rgba(50,25,90,.55)}
+.seo-answer p{margin:0 0 12px}.seo-answer p:last-child{margin-bottom:0}
+@media(max-width:760px){.hero-subtitle{font-size:14.5px}.seo-supply-grid{grid-template-columns:1fr}.seo-answer{padding:18px}.seo-answer-title{margin-top:24px}}
+</style>
+</head>
+<body>
+{% if not user.is_staff or request.session.customer_preview %}<div class="topbar">Free maker support · Dispatch in 5–6 working days · New: mica colours restocked</div>{% endif %}
+{% if user.is_authenticated and user.is_staff and request.session.customer_preview %}
+<div class="customer-preview-bar" role="status">
+  <span>👁️ You are viewing the website from the customer side. Your admin account is still active.</span>
+  <form method="post" action="{% url 'storefront:customer-preview-return' %}">{% csrf_token %}<button class="customer-preview-return" type="submit">← Return to Admin Dashboard</button></form>
+</div>
+{% endif %}
+<header class="header" id="siteHeader"><nav class="nav">
+  <a class="brand" href="/"><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="Nismita"><span class="brand-name">NISMITA<small>CRAFT STUDIO</small></span></a>
+  {% if not user.is_staff or request.session.customer_preview %}
+  <div class="menu">
+    <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+    <a href="/about/" class="{% if '/about' in request.path %}active{% endif %}">About Us</a>
+    <a href="/contact/" class="{% if '/contact' in request.path %}active{% endif %}">Contact Us</a>
+  </div>
+  {% endif %}
+  <div class="hact">
+    {% if user.is_authenticated and user.is_staff and not request.session.customer_preview %}
+      <a class="btn sm" href="/dashboard/">🛠️ Dashboard</a>
+      <a class="btn dark sm" href="/admin/">Admin</a>
+      <a class="out" href="/logout/">Out</a>
+    {% else %}
+      <form class="search" action="/shop/" method="get"><input name="search" placeholder="Search products…" value="{{ request.GET.search }}" aria-label="Search"><button type="submit" aria-label="Search">⌕</button></form>
+      {% if user.is_authenticated %}
+        <a class="hicon" href="/wishlist/" title="Wishlist">♡</a>
+        <button type="button" class="hicon search-toggle" id="searchToggle" aria-label="Search" onclick="var f=document.getElementById('msearch');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('input').focus();">🔍</button>
+        <a class="hicon" href="/cart/" title="Cart">🛒{% if cart_count %}<span class="count">{{ cart_count }}</span>{% endif %}</a>
+        <a class="hicon" href="/orders/" title="My Orders">📦</a>
+        <span class="hi">Hi {{ user.username }}</span><a class="out" href="/logout/">Out</a>
+      {% else %}
+        <a class="hicon" href="/login/" title="Wishlist">♡</a>
+        <button type="button" class="hicon search-toggle" id="searchToggle" aria-label="Search" onclick="var f=document.getElementById('msearch');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('input').focus();">🔍</button>
+        <a class="hicon" href="/cart/" title="Cart">🛒</a>
+        <a class="signin" href="/login/">Sign In</a><a class="btn sm" href="/register/">Register</a>
+      {% endif %}
+    {% endif %}
+  </div>
+</nav></header>
+{% if messages %}<div class="messages">{% for m in messages %}<div class="alert {{ m.tags|yesno:'error,alert' }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+{% if not user.is_staff or request.session.customer_preview %}
+<form class="msearch" id="msearch" action="/shop/" method="get">
+  <div class="ms-box">
+    <input name="search" placeholder="Search products…" value="{{ request.GET.search }}" aria-label="Search products">
+    <button type="submit">Search</button>
+  </div>
+</form>
+<nav class="mobilebar">
+  <a href="/" class="{% if request.path == '/' %}active{% endif %}"><span>🏠</span>Home</a>
+  <a href="{% if user.is_authenticated %}/wishlist/{% else %}/login/{% endif %}" class="{% if '/wishlist' in request.path %}active{% endif %}"><span>♡</span>Wishlist</a>
+  {% if user.is_authenticated %}
+  <a href="/cart/" class="{% if '/cart' in request.path %}active{% endif %}"><span>🛒</span>Cart{% if cart_count %}<i class="mb-badge">{{ cart_count }}</i>{% endif %}</a>
+  {% else %}
+  <a href="/login/" class="mb-auth-btn"><span>👤</span>Login</a>
+  <a href="/register/" class="mb-auth-btn mb-signup"><span>✚</span>Sign Up</a>
+  {% endif %}
+  <a href="#" id="moreBtn" onclick="document.getElementById('morePanel').classList.toggle('open');return false;"><span>☰</span>More</a>
+</nav>
+<div class="more-panel" id="morePanel">
+  {% if user.is_authenticated %}
+    <a href="/wishlist/">♡ Wishlist</a>
+    <a href="/orders/">📦 My Orders</a>
+    <a href="/logout/">↩ Sign Out ({{ user.username }})</a>
+  {% else %}
+    <a href="/login/">➜ Sign In</a>
+    <a href="/register/">✚ Create Account</a>
+  {% endif %}
+  <a href="/about/">ℹ About Us</a>
+  <a href="/contact/">✆ Contact Us</a>
+</div>
+<script>document.addEventListener('click',function(e){var p=document.getElementById('morePanel');if(p&&p.classList.contains('open')&&!p.contains(e.target)&&e.target.closest('#moreBtn')===null)p.classList.remove('open');var s=document.getElementById('msearch');if(s&&s.classList.contains('open')&&!e.target.closest('.ms-box')&&e.target.closest('#searchToggle')===null)s.classList.remove('open');document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&s&&s.classList.contains('open'))s.classList.remove('open');});});</script>
+{% endif %}
+{% block content %}{% endblock %}
+<footer class="footer"><div class="footer-inner">
+  <div class="fcol-brand">
+    <h4>NISMITA CRAFT STUDIO</h4>
+    <p>Handmade candle-making supplies: wax, wicks, silicone molds, colours & glitters.</p>
+    <div class="f-social">
+      <a href="https://www.instagram.com/nismita_craft_studio?stkn=ZTMxamYyZ3F1Z3F3" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+      <a href="https://www.tiktok.com/@nismita_craft_studio?_r=1&amp;_t=ZS-99zarpqtyJZ" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a5.3 5.3 0 0 1-3.77-1.28 5.3 5.3 0 0 1-2.39-3.72h-3.2v12.1a2.55 2.55 0 1 1-1.81-2.46V8.1a5.84 5.84 0 1 0 5.01 5.78V9.01a8.48 8.48 0 0 0 4.88 1.53V7.35a5.32 5.32 0 0 0 1.28-.66z"/></svg></a>
+
+      <a href="https://wa.me/9779708909514" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.5c-.1.2-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.1.1.7-.1 1.3z"/></svg></a>
+    </div>
+  </div>
+  <div><h4>Useful Links</h4><a href="#">Refund & Returns</a><a href="#">Shipping & Delivery</a><a href="#">Terms & Conditions</a><a href="#">Privacy Policy</a></div>
+  <div><h4>Our Products</h4>{% for c in nav_categories|slice:":4" %}<a href="/category/{{ c.slug }}/">{{ c.name }}</a>{% endfor %}</div>
+  <div><h4>Contact Us</h4><a href="https://maps.google.com/?q=Narephate-32,Kathmandu" target="_blank" rel="noopener">📍 Narephate - 32, Kathmandu</a><a href="tel:+9779708909514">📞 +977 970-8909514</a><a href="https://wa.me/9779708909514" target="_blank" rel="noopener">💬 Chat on WhatsApp</a></div>
+</div><div class="copy">Copyright © 2026 Nismita Craft Studio. All Rights Reserved. · Inspired by ukiyointernational.com</div></footer>
+<button class="to-top" id="toTop" aria-label="Back to top">↑</button>
+<script>
+// Header shadow on scroll + back-to-top visibility + reveal animations
+(function(){
+  var header=document.getElementById('siteHeader');
+  var toTop=document.getElementById('toTop');
+  function onScroll(){
+    var y=window.scrollY||document.documentElement.scrollTop;
+    if(header)header.classList.toggle('scrolled',y>10);
+    if(toTop)toTop.classList.toggle('show',y>500);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+  if(toTop)toTop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  // Reveal on scroll
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els=document.querySelectorAll('[data-reveal]');
+  if(reduce||!('IntersectionObserver' in window)){els.forEach(function(el){el.classList.add('revealed');});return;}
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');io.unobserve(e.target);}});
+  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  els.forEach(function(el){io.observe(el);});
+})();
+</script>
+</body>
+</html>

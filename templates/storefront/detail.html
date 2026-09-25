@@ -1,0 +1,451 @@
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load storefront_tags %}
+{% block seo_title %}{{ product.name }} Candle & Soap Making Material in Nepal | Nismita Craft Studio{% endblock %}
+{% block seo_description %}{% with img=product.primary_image %}{{ product.short_description|default:product.description|striptags|truncatechars:150 }}{% endwith %}{% if not product.short_description and not product.description %}Buy {{ product.name }} for candle making or cold process soap making in Nepal. Quality materials, Rs 150 delivery and confirmed dispatch.{% endif %}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% with seo_img=product.primary_image %}
+  {% block og_image %}<meta property="og:image" content="{% if seo_img %}{{ request.scheme }}://{{ request.get_host }}{{ seo_img.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/product-placeholder.svg' %}{% endif %}">{% endblock %}
+  {% block twitter_image %}<meta name="twitter:image" content="{% if seo_img %}{{ request.scheme }}://{{ request.get_host }}{{ seo_img.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/product-placeholder.svg' %}{% endif %}">{% endblock %}
+{% endwith %}
+{% block structured_data %}{{ product_seo_schema|json_script:"product-schema" }}{% endblock %}
+{% block content %}
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+:root{--primary:#6366f1;--primary-light:#818cf8;--primary-dark:#4f46e5;--success:#10b981;--success-light:#d1fae5;--warning:#f59e0b;--warning-light:#fef3c7;--danger:#ef4444;--danger-light:#fee2e2;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#1e293b;--text-muted:#64748b;--shadow:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.12);--radius:12px;--transition:all .2s ease}
+.pdp{background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* Desktop */
+@media(min-width:769px){
+  .pdp-inner{max-width:1200px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:32px}
+  .pdp-gallery{position:sticky;top:24px;align-self:start}
+  .pdp-main-image{width:100%;border-radius:16px;border:1px solid var(--border);background:#fff;overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+  .pdp-main-image img{width:100%;height:100%;object-fit:contain}
+  .pdp-thumbnails{display:flex;gap:8px;margin-top:12px;overflow-x:auto}
+  .pdp-thumb{width:72px;height:72px;border-radius:10px;border:2px solid var(--border);overflow:hidden;cursor:pointer;flex-shrink:0;transition:var(--transition)}
+  .pdp-thumb.active,.pdp-thumb:hover{border-color:var(--primary)}
+  .pdp-thumb img{width:100%;height:100%;object-fit:cover}
+  .pdp-info{padding:8px 0}
+  .pdp-sticky-bar{display:none!important}
+  .mobile-hide{display:block!important}
+}
+
+/* Mobile */
+@media(max-width:768px){
+  .pdp-inner{padding-bottom:180px}
+  .pdp-gallery{position:relative}
+  .pdp-main-image{width:100%;aspect-ratio:1;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .pdp-main-image img{width:100%;height:100%;object-fit:contain}
+  .pdp-thumbnails{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .pdp-thumb{width:60px;height:60px;border-radius:8px;border:2px solid var(--border);overflow:hidden;cursor:pointer;flex-shrink:0;transition:var(--transition)}
+  .pdp-thumb.active,.pdp-thumb:hover{border-color:var(--primary)}
+  .pdp-thumb img{width:100%;height:100%;object-fit:cover}
+  .pdp-info{background:var(--card);border-radius:16px 16px 0 0;margin-top:-16px;position:relative;padding:20px 16px;border:1px solid var(--border);border-bottom:none}
+  .pdp-sticky-bar{display:flex!important;position:fixed;left:10px;right:10px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:115;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 -6px 24px rgba(0,0,0,.14);padding:8px 10px;gap:8px}
+  .pdp-sticky-bar .bar-amount{font-size:16px}
+  .pdp-sticky-bar .bar-btn{padding:10px;min-height:40px;font-size:12.5px;border-radius:10px;white-space:nowrap}
+  .pdp-sticky-bar .qty-selector{border-radius:8px}
+  .pdp-sticky-bar .qty-btn{width:28px;height:30px;font-size:15px}
+  .pdp-sticky-bar .qty-selector input{width:30px;height:30px;font-size:13px}
+  .mobile-hide{display:none!important}
+}
+
+/* Breadcrumb */
+.pdp-breadcrumb{padding:12px 16px;font-size:12px;color:var(--text-muted);background:var(--card);border-bottom:1px solid var(--border)}
+.pdp-breadcrumb a{color:var(--text-muted);text-decoration:none}
+.pdp-breadcrumb a:hover{color:var(--primary)}
+
+/* Brand & Title */
+.pdp-brand{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px}
+.pdp-title{font-size:20px;font-weight:700;color:var(--text);line-height:1.3;margin:0 0 8px}
+
+/* Price */
+.pdp-price-row{display:flex;align-items:baseline;gap:10px;margin:12px 0}
+.pdp-price{font-size:28px;font-weight:800;color:var(--text)}
+.pdp-compare{font-size:16px;color:var(--text-muted);text-decoration:line-through}
+.pdp-discount{background:var(--success-light);color:#065f46;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700}
+
+/* Rating */
+.pdp-rating{display:flex;align-items:center;gap:6px;margin:8px 0}
+.pdp-rating .stars{color:#f59e0b;font-size:14px;letter-spacing:2px}
+.pdp-rating .count{font-size:13px;color:var(--text-muted)}
+
+/* Delivery */
+.pdp-delivery{background:var(--bg);border-radius:12px;padding:14px;margin:16px 0;border:1px solid var(--border)}
+.pdp-delivery-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pdp-delivery-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.pdp-delivery-row .icon{font-size:16px}
+.pdp-delivery-row b{color:var(--success)}
+.pdp-delivery-row span{color:var(--text-muted)}
+
+/* Variants */
+.pdp-variants{margin:16px 0}
+.pdp-variants-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
+.pdp-variant-options{display:flex;flex-wrap:wrap;gap:8px}
+.pdp-variant-btn{padding:10px 18px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);background:var(--card);cursor:pointer;transition:var(--transition);min-height:44px;display:flex;align-items:center;gap:6px}
+.pdp-variant-btn:hover,.pdp-variant-btn.active{border-color:var(--primary);background:rgba(99,102,241,.05);color:var(--primary)}
+.pdp-variant-btn input{display:none}
+.pdp-variant-btn.out{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+
+/* Offers */
+.pdp-offers{background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:14px;margin:16px 0}
+.pdp-offers-title{font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pdp-offer-item{font-size:13px;color:#78350f;margin-bottom:4px;display:flex;align-items:flex-start;gap:6px}
+.pdp-offer-item::before{content:'✓';font-weight:700;color:var(--success)}
+
+/* Accordion */
+.pdp-accordion{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:16px 0;background:var(--card)}
+.pdp-accordion-header{padding:14px 16px;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);transition:var(--transition)}
+.pdp-accordion-header:hover{background:var(--bg)}
+.pdp-accordion-header .arrow{transition:var(--transition);font-size:12px}
+.pdp-accordion-header.open .arrow{transform:rotate(180deg)}
+.pdp-accordion-body{padding:0 16px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease}
+.pdp-accordion-body.open{max-height:500px;padding:14px 16px}
+.pdp-accordion-body p{font-size:13px;color:var(--text-muted);line-height:1.6;margin:0}
+.pdp-accordion-body ul{margin:0;padding-left:18px;font-size:13px;color:var(--text-muted);line-height:1.8}
+
+/* Attributes Table */
+.pdp-attrs{width:100%;border-collapse:collapse;margin:8px 0}
+.pdp-attrs td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+.pdp-attrs td:first-child{font-weight:600;color:var(--text);width:40%;background:var(--bg)}
+.pdp-attrs td:last-child{color:var(--text-muted)}
+.pdp-attrs tr:last-child td{border-bottom:none}
+
+/* Seller */
+.pdp-seller{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:16px 0}
+.pdp-seller-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;margin-bottom:8px}
+.pdp-seller-name{font-size:14px;font-weight:600;color:var(--primary)}
+
+/* Trust Badges */
+.pdp-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.pdp-trust-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
+.pdp-trust-item .icon{font-size:20px;margin-bottom:4px}
+.pdp-trust-item .text{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase}
+
+/* Sticky Bottom Bar */
+.pdp-sticky-bar .bar-price{flex:0 0 auto}
+.pdp-sticky-bar .bar-amount{font-size:16px;font-weight:800;color:var(--text)}
+.pdp-sticky-bar .bar-btns{flex:1;display:flex;gap:8px}
+.pdp-sticky-bar .bar-btn{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:12.5px;min-height:40px;display:flex;align-items:center;justify-content:center;gap:5px;border:none;cursor:pointer;transition:var(--transition);text-decoration:none;white-space:nowrap}
+.pdp-sticky-bar .bar-btn:active{transform:scale(0.97)}
+.pdp-sticky-bar .btn-cart{background:#fff;color:var(--text);border:2px solid var(--primary)}
+.pdp-sticky-bar .btn-buy{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff}
+.bar-qty{flex:0 0 auto}
+.qty-selector{display:flex;align-items:center;border:2px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)}
+.qty-btn{width:32px;height:32px;border:none;background:var(--bg);font-size:16px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition)}
+.qty-btn:active{background:var(--primary);color:#fff}
+.qty-selector input{width:36px;height:32px;border:none;text-align:center;font-size:14px;font-weight:700;color:var(--text);background:var(--card);-moz-appearance:textfield}
+.qty-selector input::-webkit-outer-spin-button,.qty-selector input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* Section Title */
+.pdp-section-title{font-size:16px;font-weight:700;color:var(--text);margin:24px 0 12px;padding:0 16px}
+
+/* Image Counter */
+.pdp-img-counter{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+
+/* Scrollbar */
+.pdp-thumbnails::-webkit-scrollbar{height:0}
+</style>
+
+<!-- Breadcrumb -->
+<div class="pdp-breadcrumb">
+  <a href="/">Home</a> / <a href="/shop/">Shop</a> / <a href="/category/{{ product.category.slug }}/">{{ product.category.name }}</a> / {{ product.name }}
+</div>
+
+<div class="pdp-inner">
+  <!-- Gallery -->
+  <div class="pdp-gallery">
+    <div class="pdp-main-image" id="mainImage">
+      {% with img=product.primary_image %}
+        {% if img %}
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" id="mainImg" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+        {% else %}
+          <img src="{% static 'img/product-placeholder.svg' %}" alt="{{ product.name }} — photo coming soon" id="mainImg">
+        {% endif %}
+      {% endwith %}
+      {% if product.images.all|length > 1 %}
+        <div class="pdp-img-counter" id="imgCounter">1 / {{ product.images.all|length }}</div>
+      {% endif %}
+    </div>
+    <div class="pdp-thumbnails">
+      {% for im in product.images.all %}
+        <div class="pdp-thumb {% if forloop.first %}active{% endif %}" onclick="changeImage('{{ im.image.url }}', this, {{ forloop.counter }})">
+          <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }} thumbnail {{ forloop.counter }}">
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="pdp-info">
+    <div class="pdp-brand">Nismita Craft Studio · {{ product.category.name }}</div>
+    <h1 class="pdp-title">{{ product.name }}</h1>
+
+    <!-- Rating -->
+    <div class="pdp-rating">
+      <span class="stars">★★★★☆</span>
+      <span class="count">4.0 · {{ product.order_items.count|default:"0" }} sold</span>
+    </div>
+
+    <!-- Price -->
+    <div class="pdp-price-row">
+      <span class="pdp-price">{{product.price|money}}</span>
+      {% if product.compare_at_price %}
+        <span class="pdp-compare">{{ product.compare_at_price|money }}</span>
+        <span class="pdp-discount">{{ product.discount_percent }}% OFF</span>
+      {% endif %}
+    </div>
+
+    <!-- Delivery -->
+    <div class="pdp-delivery">
+      <div class="pdp-delivery-title">🚚 Delivery</div>
+      <div class="pdp-delivery-row">
+        <span class="icon">✓</span>
+        <b>Flat delivery: {{ shipping|money }}</b>
+        <span>on every order</span>
+      </div>
+      <div class="pdp-delivery-row">
+        <span class="icon">⏱️</span>
+        <b>Delivery in 5-6 days</b>
+      </div>
+      <div class="pdp-delivery-row">
+        <span class="icon">📍</span>
+        <span>Delivering across Nepal</span>
+      </div>
+    </div>
+
+    <!-- Stock Status -->
+    {% if product.stock_quantity > 0 %}
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0;padding:10px 14px;background:var(--success-light);border-radius:10px">
+        <span style="font-size:16px">✓</span>
+        <span style="font-size:13px;font-weight:600;color:#065f46">In Stock</span>
+        <span style="font-size:12px;color:#065f46">· {{ product.stock_quantity }} units available</span>
+      </div>
+    {% else %}
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0;padding:10px 14px;background:var(--danger-light);border-radius:10px">
+        <span style="font-size:16px">✕</span>
+        <span style="font-size:13px;font-weight:600;color:#991b1b">Out of Stock</span>
+      </div>
+    {% endif %}
+
+    <!-- Variants -->
+    {% if product.variants.all %}
+    <div class="pdp-variants">
+      <div class="pdp-variants-title">Select Variant</div>
+      <div class="pdp-variant-options">
+        {% for v in product.variants.all %}
+          <label class="pdp-variant-btn {% if v.stock_quantity == 0 %}out{% endif %}">
+            <input type="radio" name="variant" value="{{ v.id }}" {% if forloop.first %}checked{% endif %} {% if v.stock_quantity == 0 %}disabled{% endif %}>
+            {{ v.name }} — {{ v.price|money }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Offers -->
+    <div class="pdp-offers">
+      <div class="pdp-offers-title">🏷️ Available Offers</div>
+      <div class="pdp-offer-item">Flat delivery charge: {{ shipping|money }} on every order</div>
+      <div class="pdp-offer-item">Cash on Delivery available</div>
+      <div class="pdp-offer-item">Easy returns within 7 days</div>
+    </div>
+
+    <!-- Desktop Add to Cart Form -->
+    <form action="/cart/add/{{ product.id }}/" method="post" class="mobile-hide" style="display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;align-items:center">
+      {% csrf_token %}
+      {% if product.variants.all %}
+        <select name="variant" style="display:none" id="desktopVariant">
+          {% for v in product.variants.all %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+        </select>
+      {% endif %}
+      <div style="display:flex;align-items:center;border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
+        <button type="button" onclick="changeDesktopQty(-1)" style="width:40px;height:40px;border:none;background:var(--bg);font-size:18px;font-weight:700;cursor:pointer">−</button>
+        <input name="quantity" id="desktopQty" type="number" value="1" min="1" style="width:50px;height:40px;border:none;text-align:center;font-size:14px;font-weight:600">
+        <button type="button" onclick="changeDesktopQty(1)" style="width:40px;height:40px;border:none;background:var(--bg);font-size:18px;font-weight:700;cursor:pointer">+</button>
+      </div>
+      <span id="desktopTotal" style="font-size:16px;font-weight:700;color:var(--text);margin-left:8px" data-price="{{ product.price }}">{{ product.price|money }}</span>
+      <button class="btn" style="background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700" type="submit">🛒 Add to Cart</button>
+      <button class="btn" type="button" id="desktopBuyNow" style="background:linear-gradient(135deg,#f59e0b,#e08c00);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;box-shadow:0 10px 24px -10px rgba(245,158,11,.9)">⚡ Buy Now</button>
+      <a class="btn" href="/wishlist/add/{{ product.id }}/" style="border:1px solid var(--border);padding:12px 20px;border-radius:10px">♡ Wishlist</a>
+    </form>
+
+    {% if not user.is_authenticated %}
+      <div style="background:var(--bg);border-radius:10px;padding:12px;margin:12px 0;font-size:13px;color:var(--text-muted)">
+        🔒 <a href="/login/?next=/product/{{ product.slug }}/" style="color:var(--primary);font-weight:600">Sign in</a> to buy. Cart is saved after login.
+      </div>
+    {% endif %}
+
+    <!-- Trust Badges -->
+    <div class="pdp-trust">
+      <div class="pdp-trust-item"><div class="icon">🔒</div><div class="text">Secure Payment</div></div>
+      <div class="pdp-trust-item"><div class="icon">🚚</div><div class="text">Flat {{ shipping|money }} Delivery</div></div>
+      <div class="pdp-trust-item"><div class="icon">↩️</div><div class="text">Easy Returns</div></div>
+    </div>
+
+    <!-- Product Details Accordion -->
+    <div class="pdp-accordion">
+      <div class="pdp-accordion-header open" onclick="toggleAccordion(this)">
+        Product Details <span class="arrow">▼</span>
+      </div>
+      <div class="pdp-accordion-body open">
+        <p>{{ product.short_description|default:product.description }}</p>
+      </div>
+    </div>
+
+    <!-- Specifications -->
+    {% if product.attributes.all %}
+    <div class="pdp-accordion">
+      <div class="pdp-accordion-header" onclick="toggleAccordion(this)">
+        Specifications <span class="arrow">▼</span>
+      </div>
+      <div class="pdp-accordion-body">
+        <table class="pdp-attrs">
+          {% for a in product.attributes.all %}
+            <tr><td>{{ a.name }}</td><td>{{ a.value }}</td></tr>
+          {% endfor %}
+          <tr><td>SKU</td><td>{{ product.sku }}</td></tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Seller Info -->
+    <div class="pdp-seller">
+      <div class="pdp-seller-title">Sold &amp; Dispatched By</div>
+      <div class="pdp-seller-name">Nismita Craft Studio</div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:6px;line-height:1.6">
+        📍 Narephate - 32, Kathmandu<br>
+        📞 <a href="tel:+9779708909514" style="color:var(--primary);font-weight:600">+977 970-8909514</a> ·
+        💬 <a href="https://wa.me/9779708909514" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Related Products -->
+<section style="padding:0 16px 24px">
+  <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">You May Also Like</h2>
+  <div class="grid">{% for p in related %}{% include "storefront/_card.html" with p=p %}{% endfor %}</div>
+</section>
+
+<!-- Mobile Sticky Bottom Bar -->
+<div class="pdp-sticky-bar" data-unit-price="{{ product.price }}">
+  <div class="bar-price">
+    <div class="bar-amount" id="barTotal">{{ product.price|money }}</div>
+  </div>
+  <div class="bar-qty">
+    <div class="qty-selector">
+      <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+      <input type="number" id="mobileQty" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" readonly>
+      <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+    </div>
+  </div>
+  <div class="bar-btns">
+    <form id="mobileCartForm" action="/cart/add/{{ product.id }}/" method="post" style="display:flex;flex:1;gap:8px">
+      {% csrf_token %}
+      {% if product.variants.all %}
+        <select name="variant" style="display:none" id="mobileVariant">
+          {% for v in product.variants.all %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+        </select>
+      {% endif %}
+      <input type="hidden" name="quantity" id="mobileQtyInput" value="1">
+      <button type="submit" class="bar-btn btn-cart">🛒 Cart</button>
+    </form>
+    <button type="button" class="bar-btn btn-buy" id="buyNowBtn">⚡ Buy Now</button>
+  </div>
+</div>
+
+<script>
+// Image Gallery
+function changeImage(src, thumb, num) {
+  document.getElementById('mainImg').src = src;
+  document.querySelectorAll('.pdp-thumb').forEach(function(t) { t.classList.remove('active'); });
+  thumb.classList.add('active');
+  var counter = document.getElementById('imgCounter');
+  if (counter) counter.textContent = num + ' / ' + document.querySelectorAll('.pdp-thumb').length;
+}
+
+// Variant Selection
+document.querySelectorAll('.pdp-variant-btn input').forEach(function(input) {
+  input.addEventListener('change', function() {
+    document.querySelectorAll('.pdp-variant-btn').forEach(function(b) { b.classList.remove('active'); });
+    this.parentElement.classList.add('active');
+    // Update hidden selects
+    var val = this.value;
+    var desktopSel = document.getElementById('desktopVariant');
+    var mobileSel = document.getElementById('mobileVariant');
+    if (desktopSel) desktopSel.value = val;
+    if (mobileSel) mobileSel.value = val;
+  });
+});
+
+// Accordion
+function toggleAccordion(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+
+// Buy Now
+var buyBtn = document.getElementById('buyNowBtn');
+var cartForm = document.getElementById('mobileCartForm');
+if (buyBtn && cartForm) {
+  buyBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', cartForm.action, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    var formData = new FormData(cartForm);
+    xhr.onload = function() { window.location.href = '/cart/'; };
+    xhr.send(formData);
+  });
+}
+
+// Desktop Buy Now — add to cart then go straight to the cart page
+var dBuyBtn = document.getElementById('desktopBuyNow');
+if (dBuyBtn) {
+  dBuyBtn.addEventListener('click', function() {
+    var form = dBuyBtn.closest('form');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() { window.location.href = '/cart/'; };
+    xhr.send(new FormData(form));
+  });
+}
+
+// Initialize first variant as active
+var firstBtn = document.querySelector('.pdp-variant-btn');
+if (firstBtn) firstBtn.classList.add('active');
+
+// Quantity Selector
+function changeQty(delta) {
+  var input = document.getElementById('mobileQty');
+  var hiddenInput = document.getElementById('mobileQtyInput');
+  var val = parseInt(input.value) + delta;
+  var max = parseInt(input.getAttribute('max')) || 99;
+  if (val < 1) val = 1;
+  if (val > max) val = max;
+  input.value = val;
+  if (hiddenInput) hiddenInput.value = val;
+  // Update total price
+  updateTotalPrice(val);
+}
+
+function formatRs(n){try{return 'Rs '+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}catch(e){return 'Rs '+n;}}
+function updateTotalPrice(qty) {
+  var bar = document.querySelector('.pdp-sticky-bar');
+  var unitPrice = parseFloat(bar.getAttribute('data-unit-price'));
+  var total = unitPrice * qty;
+  document.getElementById('barTotal').textContent = formatRs(total);
+}
+
+// Desktop Quantity Selector
+var unitPrice = {{ product.price }};
+function changeDesktopQty(delta) {
+  var input = document.getElementById('desktopQty');
+  var val = parseInt(input.value) + delta;
+  if (val < 1) val = 1;
+  input.value = val;
+  document.getElementById('desktopTotal').textContent = formatRs(unitPrice * val);
+}
+</script>
+{% endblock %}

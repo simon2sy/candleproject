@@ -1,0 +1,129 @@
+{% extends 'storefront/base.html' %}{% load currency %}
+{% block title %}Sales report — Dashboard{% endblock %}
+{% block content %}
+{% include 'storefront/_dashboard_styles.html' %}
+<style>
+/* Keep report tables usable on mobile: horizontal scroll instead of card mode */
+@media(max-width:768px){
+  .rp-tables .modern-table{display:table}
+  .rp-tables .mobile-cards{display:none}
+  .rp-tables .table-scroll{overflow-x:auto}
+  .rp-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .rp-chips::-webkit-scrollbar{display:none}
+}
+.rp-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rp-chip{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
+.rp-chip.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-color:transparent}
+.rp-filter{padding:16px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.rp-filter label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--text-muted)}
+.rp-filter input,.rp-filter select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;min-width:150px}
+.rp-rank{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--bg);font-size:12px;font-weight:700;color:var(--text-muted)}
+.rp-rank.top{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff}
+</style>
+
+<section class='dash-page'>
+  <div class='dash-header'>
+    <div><h1><span class='icon'>📊</span> Sales report</h1><p class='subtitle'>Daily sales, filters and your most selling products.</p></div>
+    <div class='dash-actions'>
+      <a href='/dashboard/' class='btn btn-secondary'>← Dashboard</a>
+      <a href='/dashboard/orders/?export=csv' class='btn btn-primary'>⬇️ Download orders CSV</a>
+    </div>
+  </div>
+
+  {% if filters_active %}
+  <div class='notice-strip'>
+    <a href='/dashboard/report/'>🧹 Custom filters are on — tap to reset to all time</a>
+  </div>
+  {% endif %}
+
+  <div class='rp-chips'>
+    <a class='rp-chip {% if not f_range and not f_date_from and not f_date_to %}active{% endif %}' href='/dashboard/report/'>All time</a>
+    <a class='rp-chip {% if f_range == "today" %}active{% endif %}' href='/dashboard/report/?range=today'>Today</a>
+    <a class='rp-chip {% if f_range == "7d" %}active{% endif %}' href='/dashboard/report/?range=7d'>Last 7 days</a>
+    <a class='rp-chip {% if f_range == "30d" %}active{% endif %}' href='/dashboard/report/?range=30d'>Last 30 days</a>
+  </div>
+
+  <div class='table-card'>
+    <form class='rp-filter' method='get' action='/dashboard/report/'>
+      <label>From <input type='date' name='date_from' value='{{ f_date_from }}'></label>
+      <label>To <input type='date' name='date_to' value='{{ f_date_to }}'></label>
+      <label>Payment method
+        <select name='payment_method'>
+          <option value=''>All methods</option>
+          {% for v, l in payment_methods %}<option value='{{ v }}' {% if f_method == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class='btn btn-primary btn-sm' type='submit'>Apply</button>
+      <a class='btn btn-secondary btn-sm' href='/dashboard/report/'>Clear</a>
+    </form>
+  </div>
+
+  <div class='stats-grid'>
+    <div class='stat-card revenue'><div class='stat-icon'>💰</div><div class='stat-content'><span class='stat-label'>Revenue (filtered)</span><span class='stat-value'>{{ revenue|money }}</span><span class='stat-sub'>cancelled orders excluded</span></div></div>
+    <div class='stat-card orders'><div class='stat-icon'>📋</div><div class='stat-content'><span class='stat-label'>Orders</span><span class='stat-value'>{{ order_count }}</span><span class='stat-sub'>in the selected period</span></div></div>
+    <div class='stat-card confirmed'><div class='stat-icon'>📦</div><div class='stat-content'><span class='stat-label'>Items sold</span><span class='stat-value'>{{ units }}</span><span class='stat-sub'>total units</span></div></div>
+    <div class='stat-card today'><div class='stat-icon'>🧾</div><div class='stat-content'><span class='stat-label'>Avg order value</span><span class='stat-value'>{{ aov|money }}</span><span class='stat-sub'>revenue ÷ orders</span></div></div>
+  </div>
+
+  <div class='section-header'><h3>🏆 Most selling products</h3></div>
+  <div class='table-card rp-tables'>
+    <div class='table-scroll'>
+      <table class='modern-table'>
+        <thead><tr><th>#</th><th>Product</th><th>SKU</th><th>Units sold</th><th>Revenue</th><th>Orders</th></tr></thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td><span class='rp-rank {% if forloop.first %}top{% endif %}'>{% if forloop.first %}🥇{% else %}{{ forloop.counter }}{% endif %}</span></td>
+            <td><span style='font-weight:600'>{{ p.product_name }}</span></td>
+            <td style='color:var(--text-muted)'>{{ p.sku }}</td>
+            <td><span style='font-weight:700'>{{ p.qty }}</span></td>
+            <td>{{ p.revenue|money }}</td>
+            <td>{{ p.orders }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan='6'><div class='empty-state'><p>No sales in this period yet — sell something and it shows up here.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class='charts-grid'>
+    <div class='chart-card'>
+      <h3>📅 Daily sales (latest first, up to 31 days)</h3>
+      <div class='rp-tables'>
+        <div class='table-scroll'>
+          <table class='modern-table'>
+            <thead><tr><th>Date</th><th>Orders</th><th>Revenue</th></tr></thead>
+            <tbody>
+              {% for d in daily %}
+              <tr>
+                <td><span style='font-weight:600'>{{ d.day|date:'D, M d Y' }}</span></td>
+                <td>{{ d.orders }}</td>
+                <td><span style='font-weight:700'>{{ d.revenue|money }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan='3'><div class='empty-state'><p>No sales in this period.</p></div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class='chart-card'>
+      <h3>💳 Payments received</h3>
+      <div class='payment-methods'>
+        {% for m in by_method %}
+        <div class='payment-row'>
+          <div class='payment-icon'>{% if m.payment_method == 'ESEWA' %}📱{% elif m.payment_method == 'KHALTI' %}💳{% elif m.payment_method == 'BANK' %}🏦{% elif m.payment_method == 'COD' %}💵{% else %}📱{% endif %}</div>
+          <div class='payment-info'><div class='payment-name'>{{ m.payment_method }}</div><div class='payment-stats'>{{ m.n }} order{{ m.n|pluralize }} · {{ m.s|money }}</div></div>
+        </div>
+        {% empty %}
+        <div class='empty-state' style='padding:20px'><p>No payments yet</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% include 'storefront/_dash_footer.html' %}
+{% endblock %}

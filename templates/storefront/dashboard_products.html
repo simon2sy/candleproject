@@ -1,0 +1,67 @@
+{% extends 'storefront/base.html' %}{% load currency %}
+{% block title %}Products & stock — Dashboard{% endblock %}
+{% block content %}
+{% include 'storefront/_dashboard_styles.html' %}
+
+<section class='dash-page'>
+  <div class='dash-header'>
+    <div><h1><span class='icon'>🛍️</span> Products &amp; stock</h1><p class='subtitle'>{{ product_count }} product{{ product_count|pluralize }} in your shop — lowest stock first.</p></div>
+    <div class='dash-actions'>
+      <a href='/dashboard/' class='btn btn-secondary'>← Dashboard</a>
+      <a href='/dashboard/product/add/' class='btn btn-primary'>➕ Add product</a>
+      <a href='/admin/catalog/product/' class='btn btn-secondary'>⚙️ Edit in Admin</a>
+    </div>
+  </div>
+
+  {% if low_stock %}
+  <div class='notice-strip' id='low-stock'>
+    <a href='#low-stock'>📉 {{ low_stock|length }} product{{ low_stock|length|pluralize }} low on stock (5 or fewer) — listed first below, restock in Admin →</a>
+  </div>
+  {% endif %}
+
+  <div class='table-card'>
+    <div class='table-scroll'>
+      <table class='modern-table'>
+        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for p in all_products %}
+          <tr>
+            <td><span style='font-weight:600{% if p.stock_quantity <= 5 %};color:var(--warning){% endif %}'>{{ p.name }}</span></td>
+            <td>{{ p.category.name|default:'—' }}</td>
+            <td><span style='font-weight:600'>{{ p.price|money }}</span></td>
+            <td><div class='stock-bar'><div class='stock-track'><div class='stock-fill {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% else %}ok{% endif %}' style='width:{% widthratio p.stock_quantity 20 100 %}%'></div></div><span class='stock-count {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% endif %}'>{{ p.stock_quantity }}</span></div></td>
+            <td><span class='status-badge {% if p.is_active %}status-confirmed{% else %}status-cancelled{% endif %}'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan='5'><div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class='mobile-cards'>
+      {% for p in all_products %}
+      <div class='mobile-order-card'>
+        <div class='mobile-order-header'>
+          <span style='font-weight:600;font-size:14px{% if p.stock_quantity <= 5 %};color:var(--warning){% endif %}'>{{ p.name }}</span>
+          <span class='stock-count {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% endif %}' style='font-size:16px'>{{ p.stock_quantity }}</span>
+        </div>
+        <div class='mobile-order-body'>
+          <div class='mobile-order-item'><span class='label'>Category</span><span class='value'>{{ p.category.name|default:'—' }}</span></div>
+          <div class='mobile-order-item'><span class='label'>Price</span><span class='value'>{{ p.price|money }}</span></div>
+          <div class='mobile-order-item'><span class='label'>Stock</span><span class='value'>{{ p.stock_quantity }} left</span></div>
+          <div class='mobile-order-item'><span class='label'>Status</span><span class='value'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></div>
+        </div>
+        <div style='margin-top:10px'>
+          <div class='stock-track' style='max-width:100%'><div class='stock-fill {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% else %}ok{% endif %}' style='width:{% widthratio p.stock_quantity 20 100 %}%'></div></div>
+        </div>
+      </div>
+      {% empty %}
+      <div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% include 'storefront/_dash_footer.html' %}
+{% endblock %}

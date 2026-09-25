@@ -1,0 +1,21 @@
+{% comment %}Admin-only sticky footer — included by dashboard templates only,
+which are all @staff_member_required, so customers never see it.{% endcomment %}
+<style>
+/* Self-contained so any dashboard page can include the footer */
+.dash-sticky-footer{display:none}
+@media(max-width:768px){
+  .dash-sticky-footer{display:flex;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:120;background:rgba(255,255,255,.94);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 14px 36px -12px rgba(30,41,59,.35);padding:6px;gap:2px}
+  .dash-sticky-footer a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;font-size:10.5px;font-weight:600;color:#64748b;text-decoration:none;border-radius:14px;min-height:50px;justify-content:center;-webkit-tap-highlight-color:transparent}
+  .dash-sticky-footer a:active{transform:scale(.94)}
+  .dash-sticky-footer a span{font-size:18px;line-height:1}
+  .dash-sticky-footer a.active{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 8px 18px -8px rgba(79,70,229,.7)}
+  .dash-sticky-footer a.add{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+}
+</style>
+<nav class='dash-sticky-footer' aria-label='Dashboard quick navigation'>
+  <a href='/dashboard/' class='{% if request.path == "/dashboard/" %}active{% endif %}'><span>🏠</span>Home</a>
+  <a href='/dashboard/orders/' class='{% if "/dashboard/order" in request.path %}active{% endif %}'><span>📦</span>Orders</a>
+  <a href='/dashboard/product/add/' class='add'><span>➕</span>Add</a>
+  <a href='/dashboard/products/' class='{% if "/dashboard/products" in request.path %}active{% endif %}'><span>🛍️</span>Stock</a>
+  <a href='/dashboard/report/' class='{% if "/dashboard/report" in request.path %}active{% endif %}'><span>📊</span>Report</a>
+</nav>

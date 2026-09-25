@@ -1,0 +1,62 @@
+{% extends "storefront/base.html" %}
+{% block seo_title %}{% if category %}{{ category.name }} & Candle Making Supplies in Nepal{% else %}Candle & Cold Process Soap Materials in Nepal{% endif %} | Nismita Craft Studio{% endblock %}
+{% block seo_description %}{% if category and category.description %}{{ category.description|truncatechars:150 }}{% elif category %}Shop {{ category.name }} and quality candle making materials in Nepal from Nismita Craft Studio.{% else %}Shop candle making and cold process soap materials across Nepal, including wax, soap bases, wicks, molds, fragrance oils, colours and tools.{% endif %}{% endblock %}
+{% block seo_robots %}{% if search %}noindex,follow{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
+{% block og_type %}website{% endblock %}
+{% block content %}<section class="section">
+<div class="breadcrumb"><a href="/">Home</a> / {% if category %}<a href="/shop/">Shop</a> / {{ category.name }}{% else %}Shop{% endif %}</div>
+<div class="section-head">
+  <div>
+    <h2>{% if category %}{{ category.name }}{% else %}Shop All Supplies{% endif %}</h2>
+    <div class="sub">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }} · filter by category, price or keyword</div>
+  </div>
+  <span class="count-pill">{{ products.paginator.count }} item{{ products.paginator.count|pluralize }}</span>
+</div>
+
+<div class="chips" data-reveal>
+  <a class="chip {% if not category %}active{% endif %}" href="/shop/">All supplies</a>
+  {% for c in categories %}<a class="chip {% if category and category.id == c.id %}active{% endif %}" href="/category/{{ c.slug }}/">{{ c.name }} <i>{{ c.products.count }}</i></a>{% endfor %}
+</div>
+
+<form class="filter-bar" method="get" action="{{ request.path }}" role="search">
+  <label class="fld grow"><span>Search</span><input name="search" placeholder="Wax, wick, mold…" value="{{ search }}"></label>
+  <label class="fld"><span>Min (Rs)</span><input name="min_price" inputmode="decimal" placeholder="0" value="{{ min_price }}"></label>
+  <label class="fld"><span>Max (Rs)</span><input name="max_price" inputmode="decimal" placeholder="10000" value="{{ max_price }}"></label>
+  <label class="fld"><span>Sort by</span>
+    <select name="ordering">
+      <option value="">Newest first</option>
+      <option value="price" {% if ordering == "price" %}selected{% endif %}>Price: low → high</option>
+      <option value="-price" {% if ordering == "-price" %}selected{% endif %}>Price: high → low</option>
+      <option value="name" {% if ordering == "name" %}selected{% endif %}>Name: A → Z</option>
+      <option value="-name" {% if ordering == "-name" %}selected{% endif %}>Name: Z → A</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Apply filters</button>
+  {% if search or min_price or max_price or ordering %}<a class="btn ghost" href="{{ request.path }}">Reset</a>{% endif %}
+</form>
+
+{% if search or min_price or max_price or ordering %}
+<div class="active-filters">
+  {% if search %}<a class="pill" href="{% querystring search=None page=None %}">Search: “{{ search }}” <b>✕</b></a>{% endif %}
+  {% if min_price %}<a class="pill" href="{% querystring min_price=None page=None %}">Min {{ min_price }} <b>✕</b></a>{% endif %}
+  {% if max_price %}<a class="pill" href="{% querystring max_price=None page=None %}">Max {{ max_price }} <b>✕</b></a>{% endif %}
+  {% if ordering %}<a class="pill" href="{% querystring ordering=None page=None %}">Sorted: {{ ordering }} <b>✕</b></a>{% endif %}
+  <a class="pill clear" href="{{ request.path }}">Clear all</a>
+</div>
+{% endif %}
+
+<div class="grid" data-reveal>{% for p in products %}{% include "storefront/_card.html" with p=p %}{% empty %}
+<div class="empty"><div class="empty-ico">🔍</div><h3>No products found</h3><p>Try a different keyword, widen the price range, or clear the filters.</p><a class="btn" href="{{ request.path }}">Clear filters</a></div>
+{% endfor %}</div>
+
+{% if products.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="Product pages">
+  {% if products.has_previous %}<a class="pg" href="{% querystring page=products.previous_page_number %}" rel="prev">‹ Prev</a>{% endif %}
+  {% for num in products.paginator.page_range %}
+    {% if num == products.number %}<span class="pg on" aria-current="page">{{ num }}</span>
+    {% elif num > products.number|add:"-3" and num < products.number|add:"3" %}<a class="pg" href="{% querystring page=num %}">{{ num }}</a>{% endif %}
+  {% endfor %}
+  {% if products.has_next %}<a class="pg" href="{% querystring page=products.next_page_number %}" rel="next">Next ›</a>{% endif %}
+</nav>
+{% endif %}
+</section>{% endblock %}

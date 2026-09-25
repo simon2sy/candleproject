@@ -1,0 +1,13 @@
+{% extends "storefront/base.html" %}{% load currency %}{% block title %}Redirecting to eSewa — Nismita{% endblock %}
+{% block content %}
+<section class="section" style="max-width:520px;margin:0 auto;text-align:center">
+  <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:32px 20px">
+    <div style="font-size:44px;margin-bottom:10px">🔐</div>
+    <h2 style="margin-bottom:6px">Taking you to eSewa…</h2>
+    <p style="color:var(--muted);margin-bottom:4px">Order <b>{{ order_number }}</b> — {{ total|money }}</p>
+    <p style="color:var(--muted);font-size:14px">Do not press back or close this page.</p>
+    <div class="spinner" style="margin:18px auto 0"></div>
+  </div>
+</section>
+{{ esewa_form|safe }}
+{% endblock %}

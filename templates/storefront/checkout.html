@@ -1,0 +1,58 @@
+{% extends "storefront/base.html" %}{% load currency %}{% load static %}{% block title %}Checkout — Nismita{% endblock %}
+{% block content %}<section class="section"><h2>Checkout</h2><div class="sub">{{ items|length }} items · subtotal {{ subtotal|money }} · delivery {{ shipping|money }}</div>
+<style>
+.qr-steps{display:grid;gap:12px;margin-top:10px}
+.qr-step{display:flex;gap:12px;align-items:flex-start;background:#fbfaff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.qr-num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--purple);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center;margin-top:2px}
+.qr-step b{font-size:14.5px}
+.qr-step p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.55}
+.qr-img{width:170px;height:170px;object-fit:contain;background:#fff;border:2px dashed var(--purple);border-radius:14px;padding:8px;display:block;margin:10px auto 0}
+@media(max-width:640px){.qr-img{width:150px;height:150px}}
+</style>
+<div class="checkout-grid">
+<div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px">
+  <h4>Order summary</h4>
+  {% for i in items %}<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line)"><span>{{ i.quantity }} × {{ i.product.name }}{% if i.variant %} ({{ i.variant.name }}){% endif %}</span><b>{{ i.line_total|money }}</b></div>{% endfor %}
+  <p style="margin-top:14px">Subtotal: {{ subtotal|money }}<br>Delivery: {{ shipping|money }}<br><b style="font-size:18px">Total: {{ total|money }}</b></p>
+</div>
+<form method="post" enctype="multipart/form-data" style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px">{% csrf_token %}
+  <h4>📍 Delivery location (all Nepal)</h4>
+  <div class="form-row"><label>Full name *<input name="full_name" required value="{{ request.POST.full_name }}" placeholder="Sita Sharma"></label>
+  <label>Phone *<input name="phone" required value="{{ request.POST.phone }}" placeholder="98XXXXXXXX"></label></div>
+  <div class="form-row"><label>Province *
+    <select name="province" id="provSel" required><option value="">— Select province —</option>
+    {% for p in provinces %}<option value="{{ p }}" {% if request.POST.province == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+  <label>District *
+    <select name="district" id="distSel" required><option value="">— Select district —</option></select></label></div>
+  <div class="form-row"><label>City / Village *<input name="city" required value="{{ request.POST.city }}" placeholder="e.g. Pokhara-6"></label>
+  <label>Ward / Landmark (optional)<input name="landmark" value="{{ request.POST.landmark }}" placeholder="Near xxx temple"></label></div>
+  <label>Street address *<input name="address_line" required value="{{ request.POST.address_line }}" placeholder="House no, tole, street"></label>
+
+  <h4 style="margin-top:20px">💳 Pay by QR — 3 simple steps</h4>
+  <div class="qr-steps">
+    <div class="qr-step"><span class="qr-num">1</span><div><b>Scan the QR &amp; pay {{ total|money }}</b>
+      <p>Open <b>eSewa, Khalti, IME Pay or any banking app</b> → choose <b>Scan &amp; Pay</b> → scan this QR → pay the total amount.</p>
+      <img class="qr-img" src="{% static 'img/payment_qr.png' %}" alt="Nismita Craft Studio payment QR code" width="170" height="170">
+    </div></div>
+    <div class="qr-step"><span class="qr-num">2</span><div><b>Save your payment screenshot</b>
+      <p>Take a screenshot of the success screen (or note the transaction ID).</p>
+    </div></div>
+    <div class="qr-step"><span class="qr-num">3</span><div><b>Place the order → send it on WhatsApp</b>
+      <p>After you order, a green <b>WhatsApp button</b> appears — send the screenshot there and we'll confirm your order fast 🕯️</p>
+    </div></div>
+  </div>
+  <input type="hidden" name="payment_method" value="QR">
+  <div class="form-row" style="margin-top:12px"><label>Transaction ID (from your payment app)<input name="payment_reference" value="{{ request.POST.payment_reference }}" placeholder="e.g. 9F2AB8C1"></label>
+  <label>Your WhatsApp number (optional)<input name="whatsapp_number" value="{{ request.POST.whatsapp_number }}" placeholder="97798XXXXXXXX"></label></div>
+  <label>Payment screenshot (optional here — you can also send it on WhatsApp after ordering)<input type="file" name="payment_screenshot" accept="image/*"></label>
+  <button class="btn" style="width:100%;margin-top:14px" type="submit">Place Order — {{ total|money }} →</button>
+  <p style="color:var(--muted);font-size:13px;margin-top:8px">Pay with the QR above <b>after</b> placing the order, then send the screenshot on WhatsApp — the admin confirms your order. No card or online payment form needed.</p>
+</form>
+</div>
+<script>
+const NEPAL = {{ districts_json|safe }};
+const prov = document.getElementById('provSel'), dist = document.getElementById('distSel');
+function fill(){dist.innerHTML='<option value="">— Select district —</option>';(NEPAL[prov.value]||[]).forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;if('{{ request.POST.district }}'===d)o.selected=true;dist.appendChild(o);});}
+prov.addEventListener('change',fill);fill();
+</script>
+</section>{% endblock %}

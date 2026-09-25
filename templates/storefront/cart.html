@@ -1,0 +1,46 @@
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}
+{% block title %}Cart — Nismita Craft Studio{% endblock %}
+{% block content %}<section class="section">
+<div class="section-head">
+  <div><h2>Shopping Cart 🛒</h2><div class="sub">{{ cart.count }} item{{ cart.count|pluralize }} · subtotal {{ subtotal|money }}</div></div>
+  <a class="btn ghost" href="/shop/">Continue shopping</a>
+</div>
+{% if items %}
+<div class="cart-grid">
+  <div class="cart-lines">
+    {% for i in items %}
+    <article class="line-item">
+      <a class="thumb" href="/product/{{ i.product.slug }}/">{% with img=i.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ i.product.name }}" loading="lazy" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ i.product.name }}" loading="lazy">{% endif %}{% endwith %}</a>
+      <div class="line-main">
+        <a class="line-name" href="/product/{{ i.product.slug }}/">{{ i.product.name }}</a>
+        <small class="muted">{% if i.variant %}{{ i.variant.name }} · {% endif %}{{ i.unit_price|money }} each</small>
+        {% if i.product.stock_quantity == 0 %}<span class="badge out">Out of stock</span>
+        {% elif i.quantity > i.product.stock_quantity %}<span class="badge out">Only {{ i.product.stock_quantity }} left</span>
+        {% else %}<span class="badge ok">✓ In stock</span>{% endif %}
+      </div>
+      <form class="qty-form" action="/cart/update/{{ i.id }}/" method="post">{% csrf_token %}
+        <label class="sr-only" for="qty-{{ i.id }}">Quantity for {{ i.product.name }}</label>
+        <input id="qty-{{ i.id }}" name="quantity" type="number" value="{{ i.quantity }}" min="0">
+        <button class="btn ghost sm" type="submit">Update</button>
+      </form>
+      <div class="line-total">{{ i.line_total|money }}</div>
+      <form class="line-remove" action="/cart/remove/{{ i.id }}/" method="post">{% csrf_token %}<button class="remove-btn" type="submit" title="Remove item" aria-label="Remove {{ i.product.name }}">✕</button></form>
+    </article>
+    {% endfor %}
+  </div>
+  <aside class="summary-card">
+    <h4>Order summary</h4>
+    <div class="sum-row"><span>Subtotal ({{ cart.count }} item{{ cart.count|pluralize }})</span><b>{{ subtotal|money }}</b></div>
+    <div class="sum-row"><span>Delivery</span><b>{{ shipping|money }}</b></div>
+    <div class="sum-row grand"><span>Total</span><b>{{ total|money }}</b></div>
+    <p class="ship-hint">A flat delivery charge of <b>{{ shipping|money }}</b> applies to every order.</p>
+    <a class="btn wide" href="/checkout/">Proceed to Checkout →</a>
+    <a class="btn ghost wide" href="/shop/">Continue Shopping</a>
+    <p class="muted small">🔒 Secure checkout · 🚚 Dispatch in 5–6 working days · 💬 Pay by QR — eSewa / Khalti / Bank, confirmed on WhatsApp</p>
+  </aside>
+</div>
+{% else %}
+<div class="empty"><div class="empty-ico">🛒</div><h3>Your cart is empty</h3><p>Browse waxes, wicks, molds, colours and glitter — everything for candle making.</p><a class="btn" href="/shop/">Go to shop →</a></div>
+{% endif %}
+</section>{% endblock %}

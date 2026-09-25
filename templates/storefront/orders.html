@@ -1,0 +1,29 @@
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}
+{% block title %}My Orders — Nismita{% endblock %}
+{% block content %}<section class="section">
+<div class="section-head"><div><h2>My Orders 📦</h2><div class="sub">{{ orders|length }} order{{ orders|length|pluralize }} placed</div></div><a class="btn ghost" href="/shop/">Continue shopping</a></div>
+{% for o in orders %}
+<article class="order-card">
+  <header class="order-card-head">
+    <div class="order-id"><b>{{ o.order_number }}</b><span class="st st-{{ o.status|lower }}">{{ o.get_status_display }}</span></div>
+    <div class="order-total"><small>Total</small><b>{{ o.total|money }}</b></div>
+  </header>
+  <div class="order-lines">
+    {% for it in o.items.all %}
+    <div class="order-line">
+      <div class="thumb">{% with img=it.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ it.product_name }}" loading="lazy" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ it.product_name }}" loading="lazy">{% endif %}{% endwith %}</div>
+      <div class="order-line-main"><a href="/product/{{ it.product.slug }}/"><b>{{ it.product_name }}</b></a><small>SKU {{ it.sku }} · {{ it.quantity }} × {{ it.unit_price|money }}</small></div>
+      <b class="order-line-total">{{ it.total_price|money }}</b>
+    </div>
+    {% endfor %}
+  </div>
+  <footer class="order-card-foot">
+    <small class="muted">Placed {{ o.created_at|date:"d M Y, H:i" }} · delivery {{ o.shipping_cost|money }}</small>
+    <a class="btn ghost sm" href="/orders/{{ o.order_number }}/">Order details →</a>
+  </footer>
+</article>
+{% empty %}
+<div class="empty"><div class="empty-ico">📦</div><h3>No orders yet</h3><p>Your orders, payment status and delivery tracking will appear here.</p><a class="btn" href="/shop/">Start shopping</a></div>
+{% endfor %}
+</section>{% endblock %}

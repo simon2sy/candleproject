@@ -1,0 +1,430 @@
+{% extends "storefront/base.html" %}{% load currency %}
+{% block title %}Orders - Dashboard - Nismita{% endblock %}
+{% block content %}
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+:root{--primary:#6366f1;--primary-light:#818cf8;--primary-dark:#4f46e5;--success:#10b981;--success-light:#d1fae5;--warning:#f59e0b;--warning-light:#fef3c7;--danger:#ef4444;--danger-light:#fee2e2;--info:#3b82f6;--info-light:#dbeafe;--purple:#8b5cf6;--purple-light:#ede9fe;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#1e293b;--text-muted:#64748b;--text-light:#94a3b8;--shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--radius:12px;--radius-lg:16px;--transition:all .2s ease}
+.orders-page{max-width:1400px;margin:0 auto;padding:24px;background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* Header */
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.page-header h1{font-size:28px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;margin:0}
+.page-header h1 .icon{width:42px;height:42px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0}
+.header-actions{display:flex;gap:10px}
+
+/* Buttons */
+.btn{padding:10px 20px;border-radius:var(--radius);font-weight:600;font-size:14px;cursor:pointer;transition:var(--transition);border:none;display:inline-flex;align-items:center;gap:8px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 2px 4px rgba(99,102,241,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(99,102,241,.4)}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg);border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:8px 14px;font-size:13px}
+
+/* Stats Grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border-radius:var(--radius-lg);padding:20px;border:1px solid var(--border);transition:var(--transition);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.stat-card.revenue::before{background:linear-gradient(90deg,var(--success),#34d399)}
+.stat-card.orders::before{background:linear-gradient(90deg,var(--primary),var(--primary-light))}
+.stat-card.pending::before{background:linear-gradient(90deg,var(--warning),#fbbf24)}
+.stat-card.processing::before{background:linear-gradient(90deg,var(--info),#60a5fa)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}
+.stat-card.revenue .stat-icon{background:var(--success-light)}
+.stat-card.orders .stat-icon{background:var(--info-light)}
+.stat-card.pending .stat-icon{background:var(--warning-light)}
+.stat-card.processing .stat-icon{background:var(--danger-light)}
+.stat-content{display:flex;flex-direction:column}
+.stat-label{font-size:12px;color:var(--text-muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:6px}
+.stat-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-change.positive{color:var(--success)}
+.stat-change.negative{color:var(--danger)}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+.chart-card{background:var(--card);border-radius:var(--radius-lg);border:1px solid var(--border);padding:20px}
+.chart-card h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 16px}
+.chart-bar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.chart-label{width:90px;font-size:12px;color:var(--text-muted);text-align:right}
+.chart-track{flex:1;height:24px;background:var(--bg);border-radius:6px;overflow:hidden}
+.chart-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:600;color:#fff;min-width:fit-content;transition:width .5s ease}
+.chart-fill.revenue{background:linear-gradient(90deg,var(--success),#34d399)}
+.chart-fill.orders{background:linear-gradient(90deg,var(--primary),var(--primary-light))}
+.chart-value{width:60px;font-size:13px;font-weight:600;color:var(--text)}
+
+/* Quick Stats */
+.quick-stats{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.quick-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px}
+.quick-stat .dot{width:8px;height:8px;border-radius:50%}
+.dot-pending{background:var(--warning)}
+.dot-confirmed{background:var(--success)}
+.dot-processing{background:var(--info)}
+
+/* Filter Panel */
+.filter-panel{background:var(--card);border-radius:var(--radius-lg);border:1px solid var(--border);margin-bottom:24px;overflow:hidden}
+.filter-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:var(--bg)}
+.filter-header h3{font-size:15px;font-weight:600;color:var(--text);margin:0}
+.filter-toggle{font-size:13px;color:var(--primary);cursor:pointer}
+.filter-body{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.filter-group{display:flex;flex-direction:column;gap:6px}
+.filter-group label{font-size:11px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+.filter-group input,.filter-group select{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:var(--card);transition:var(--transition)}
+.filter-group input:focus,.filter-group select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.filter-group input::placeholder{color:var(--text-light)}
+.filter-actions{grid-column:1/-1;display:flex;gap:12px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+
+/* Active Filters */
+.active-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.active-filter{background:var(--primary-light);color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.active-filter .remove{cursor:pointer;opacity:.8;transition:var(--transition);color:#fff;text-decoration:none}
+.active-filter .remove:hover{opacity:1}
+
+/* Table Container */
+.table-container{background:var(--card);border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden}
+.table-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:12px}
+.table-header h3{font-size:15px;font-weight:600;color:var(--text);margin:0}
+.table-actions input[type="search"]{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;width:220px}
+.table-actions input[type="search"]:focus{outline:none;border-color:var(--primary)}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.orders-table{width:100%;border-collapse:collapse;min-width:700px}
+.orders-table th{background:var(--bg);padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+.orders-table td{padding:14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);vertical-align:middle}
+.orders-table tr:last-child td{border-bottom:none}
+.orders-table tr:hover{background:var(--bg)}
+
+/* Order ID */
+.order-id{font-weight:700;color:var(--primary);text-decoration:none;display:flex;align-items:center;gap:6px;transition:var(--transition)}
+.order-id:hover{color:var(--primary-dark);text-decoration:underline}
+.order-id .copy-icon{opacity:0;transition:var(--transition);font-size:11px;cursor:pointer}
+.orders-table tr:hover .order-id .copy-icon{opacity:.5}
+.order-id .copy-icon:hover{opacity:1;color:var(--success)}
+
+/* Customer Info */
+.customer-info{display:flex;flex-direction:column;gap:2px}
+.customer-name{font-weight:600;color:var(--text)}
+.customer-phone{font-size:11px;color:var(--text-muted)}
+
+/* Status Badges */
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:16px;font-size:10px;font-weight:600;text-transform:uppercase;white-space:nowrap}
+.status-pending{background:var(--warning-light);color:#92400e}
+.status-confirmed{background:var(--success-light);color:#065f46}
+.status-processing{background:var(--info-light);color:#1e40af}
+.status-shipped{background:var(--purple-light);color:#5b21b6}
+.status-delivered{background:var(--success-light);color:#065f46}
+.status-cancelled{background:var(--danger-light);color:#991b1b}
+.status-badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* Payment Info */
+.payment-info{display:flex;flex-direction:column;gap:4px}
+.payment-method{font-weight:600;color:var(--text);font-size:13px}
+.payment-status{font-size:10px;padding:3px 6px;border-radius:6px;font-weight:500;display:inline-block;width:fit-content}
+.payment-status.pending{background:var(--warning-light);color:#92400e}
+.payment-status.verified{background:var(--success-light);color:#065f46}
+.payment-status.rejected{background:var(--danger-light);color:#991b1b}
+
+/* Amount */
+.amount{font-weight:700;color:var(--text);font-size:14px}
+.amount .currency{font-size:11px;color:var(--text-muted);font-weight:500}
+
+/* Date */
+.date-info{display:flex;flex-direction:column;gap:2px}
+.date-main{font-weight:500;color:var(--text);font-size:13px}
+.date-relative{font-size:11px;color:var(--text-muted)}
+
+/* Actions */
+.action-buttons{display:flex;gap:6px}
+.action-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);font-size:14px}
+.action-btn:hover{background:var(--bg);border-color:var(--primary);color:var(--primary)}
+.action-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.action-btn.primary:hover{background:var(--primary-dark)}
+
+/* Empty State */
+.empty-state{padding:40px 20px;text-align:center}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.empty-state h4{font-size:16px;color:var(--text);margin-bottom:8px}
+.empty-state p{color:var(--text-muted);font-size:14px}
+
+/* Mobile Cards */
+.mobile-cards{display:none}
+
+/* Loading */
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:var(--transition)}
+.loading-overlay.active{opacity:1;visibility:visible}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeInOut{0%{opacity:0;transform:translateY(20px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-20px)}}
+
+/* ==================== RESPONSIVE ==================== */
+
+/* Tablet */
+@media(max-width:1024px){
+  .charts-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Mobile */
+@media(max-width:768px){
+  .orders-page{padding:16px 12px}
+  
+  /* Header */
+  .page-header{flex-direction:column;align-items:stretch;gap:12px}
+  .page-header h1{font-size:22px}
+  .page-header h1 .icon{width:36px;height:36px;font-size:18px}
+  .header-actions{justify-content:stretch}
+  .header-actions .btn{flex:1;justify-content:center;padding:12px 16px;font-size:13px}
+  
+  /* Stats */
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card{padding:14px}
+  .stat-icon{width:36px;height:36px;font-size:18px;margin-bottom:10px;border-radius:8px}
+  .stat-label{font-size:10px}
+  .stat-value{font-size:20px}
+  .stat-sub{font-size:10px}
+  
+  /* Charts */
+  .charts-grid{gap:12px}
+  .chart-card{padding:16px}
+  .chart-card h4{font-size:13px;margin-bottom:12px}
+  .chart-bar{gap:8px;margin-bottom:8px}
+  .chart-label{width:70px;font-size:10px}
+  .chart-track{height:20px}
+  .chart-fill{font-size:10px;padding:0 6px}
+  .chart-value{width:50px;font-size:11px}
+  
+  /* Quick Stats */
+  .quick-stats{gap:8px}
+  .quick-stat{padding:10px 12px;font-size:13px}
+  
+  /* Filters */
+  .filter-header{padding:12px 14px}
+  .filter-body{grid-template-columns:1fr;gap:12px;padding:14px}
+  .filter-actions{flex-direction:column}
+  .filter-actions .btn{width:100%;justify-content:center}
+  
+  /* Table Header */
+  .table-header{flex-direction:column;align-items:stretch;gap:10px}
+  .table-actions input[type="search"]{width:100%}
+  
+  /* Tables - Card Layout */
+  .table-scroll{overflow-x:hidden}
+  .orders-table{display:none}
+  .mobile-cards{display:block;padding:12px}
+  
+  /* Mobile Order Card */
+  .mobile-order-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+  .mobile-order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .mobile-order-id{font-weight:700;color:var(--primary);font-size:14px;text-decoration:none}
+  .mobile-order-body{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mobile-order-item{display:flex;flex-direction:column;gap:2px}
+  .mobile-order-item .label{font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600}
+  .mobile-order-item .value{font-size:13px;color:var(--text);font-weight:500}
+  .mobile-order-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+  .mobile-order-total{font-size:16px;font-weight:700;color:var(--text)}
+}
+
+/* Small Mobile */
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat-card{padding:12px}
+  .stat-icon{width:32px;height:32px;font-size:16px;margin-bottom:8px}
+  .stat-value{font-size:18px}
+  .mobile-order-body{grid-template-columns:1fr}
+}
+
+/* Touch improvements */
+@media(hover:none) and (pointer:coarse){
+  .btn{min-height:44px;min-width:44px}
+  .action-btn{min-height:40px;min-width:40px}
+  .mobile-order-card:active{transform:scale(0.98)}
+}
+</style>
+
+<section class="orders-page">
+  <div class="page-header">
+    <h1><span class="icon">📦</span> Orders Dashboard</h1>    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="window.print()">
+        🖨️ Print
+      </button>
+      <a href="?{{ request.GET.urlencode }}&export=csv" class="btn btn-primary">
+        ⬇️ Export CSV
+      </a>
+      <a href="/logout/" class="btn btn-secondary" style="color:var(--danger);border-color:var(--danger)">↩️ Logout</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <span class="stat-label">Revenue</span>
+        <span class="stat-value">{{ stats.revenue|money }}</span>
+        <div class="stat-change positive">Today: {{ stats.today_revenue|money }}</div>
+      </div>
+    </div>
+    <div class="stat-card orders">
+      <div class="stat-icon">📋</div>
+      <div class="stat-content">
+        <span class="stat-label">Orders</span>
+        <span class="stat-value">{{ stats.orders }}</span>
+        <div class="stat-change positive">Today: {{ stats.today_orders }}</div>
+      </div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-content">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ stats.pending_pay }}</span>
+        <div class="stat-change negative">Needs attention</div>
+      </div>
+    </div>
+    <div class="stat-card processing">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <span class="stat-label">Confirmed</span>
+        <span class="stat-value">{{ stats.confirmed }}</span>
+        <div class="stat-change positive">Ready to process</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h4>📊 Payment Methods</h4>
+      {% for method, data in stats.by_method.items %}
+      {% if method %}
+      <div class="chart-bar">
+        <span class="chart-label">{{ method }}</span>
+        <div class="chart-track">
+          <div class="chart-fill orders" style="width:{% if stats.orders %}{% widthratio data.0 stats.orders 100 %}{% else %}0{% endif %}%">{{ data.0 }}</div>
+        </div>
+        <span class="chart-value">{{ data.1|money }}</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="chart-card">
+      <h4>📅 Last 7 Days</h4>
+      {% for day in chart %}
+      <div class="chart-bar">
+        <span class="chart-label">{{ day.label }}</span>
+        <div class="chart-track">
+          <div class="chart-fill revenue" style="width:{{ day.pct }}%">{% if day.value > 0 %}{{ day.value|money }}{% endif %}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="quick-stats">
+    <div class="quick-stat"><span class="dot dot-pending"></span><span><strong>{{ stats.pending_pay }}</strong> Pending</span></div>
+    <div class="quick-stat"><span class="dot dot-confirmed"></span><span><strong>{{ stats.confirmed }}</strong> Confirmed</span></div>
+    <div class="quick-stat"><span class="dot dot-processing"></span><span><strong>{{ stats.orders }}</strong> Total</span></div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-header">
+      <h3>🔍 Filters</h3>
+      <span class="filter-toggle" onclick="toggleFilters()">
+        {% if request.GET.q or request.GET.status or request.GET.payment_status or request.GET.province or request.GET.date_from or request.GET.date_to %}Active ▲{% else %}Show ▼{% endif %}
+      </span>
+    </div>
+    <div class="filter-body" id="filterBody" style="{% if not request.GET.q and not request.GET.status and not request.GET.payment_status and not request.GET.province and not request.GET.date_from and not request.GET.date_to %}display:none{% endif %}">
+      <form method="get" id="filterForm">
+        <div class="filter-group"><label>Search</label><input type="text" name="q" value="{{ request.GET.q }}" placeholder="Order #, customer, phone..."></div>
+        <div class="filter-group"><label>Status</label><select name="status"><option value="">All</option>{% for v, l in statuses %}<option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="filter-group"><label>Payment Status</label><select name="payment_status"><option value="">All</option>{% for v, l in payment_statuses %}<option value="{{ v }}" {% if request.GET.payment_status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="filter-group"><label>Method</label><select name="payment_method"><option value="">All</option>{% for v, l in payment_methods %}<option value="{{ v }}" {% if request.GET.payment_method == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="filter-group"><label>Province</label><select name="province"><option value="">All</option>{% for p in provinces %}<option value="{{ p }}" {% if request.GET.province == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+        <div class="filter-group"><label>From</label><input type="date" name="date_from" value="{{ request.GET.date_from }}"></div>
+        <div class="filter-group"><label>To</label><input type="date" name="date_to" value="{{ request.GET.date_to }}"></div>
+        <div class="filter-actions">
+          <button type="submit" class="btn btn-primary">🔍 Apply</button>
+          <a href="/dashboard/orders/" class="btn btn-secondary">↻ Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if request.GET.q or request.GET.status or request.GET.payment_status or request.GET.province or request.GET.date_from or request.GET.date_to %}
+  <div class="active-filters">
+    {% if request.GET.q %}<span class="active-filter">Search: {{ request.GET.q }} <a href="{% url 'storefront:dashboard-orders' %}?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.payment_status %}payment_status={{ request.GET.payment_status }}&{% endif %}{% if request.GET.province %}province={{ request.GET.province }}&{% endif %}" class="remove">✕</a></span>{% endif %}
+    {% if request.GET.status %}<span class="active-filter">Status: {{ request.GET.status }} <a href="{% url 'storefront:dashboard-orders' %}?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.payment_status %}payment_status={{ request.GET.payment_status }}&{% endif %}{% if request.GET.province %}province={{ request.GET.province }}&{% endif %}" class="remove">✕</a></span>{% endif %}
+    {% if request.GET.payment_status %}<span class="active-filter">Payment: {{ request.GET.payment_status }} <a href="{% url 'storefront:dashboard-orders' %}?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.province %}province={{ request.GET.province }}&{% endif %}" class="remove">✕</a></span>{% endif %}
+    {% if request.GET.province %}<span class="active-filter">Province: {{ request.GET.province }} <a href="{% url 'storefront:dashboard-orders' %}?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.payment_status %}payment_status={{ request.GET.payment_status }}&{% endif %}" class="remove">✕</a></span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="table-container">
+    <div class="table-header">
+      <h3>📋 Orders <span style="font-weight:400;color:var(--text-muted);font-size:13px">({{ count }} total)</span></h3>
+      <div class="table-actions">
+        <input type="search" placeholder="Quick search..." id="quickSearch" onkeyup="filterTable()">
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="orders-table" id="ordersTable">
+        <thead>
+          <tr><th>Order</th><th>Date</th><th>Customer</th><th>Location</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr data-search="{{ o.order_number }} {{ o.customer.username }} {{ o.phone }} {{ o.district }} {{ o.province }}">
+            <td><a href="/dashboard/order/{{ o.id }}/" class="order-id">{{ o.order_number }}<span class="copy-icon" onclick="event.preventDefault();copyOrder('{{ o.order_number }}')" title="Copy">📋</span></a></td>
+            <td><div class="date-info"><span class="date-main">{{ o.created_at|date:"M d, Y" }}</span><span class="date-relative">{{ o.created_at|time:"H:i" }}</span></div></td>
+            <td><div class="customer-info"><span class="customer-name">{{ o.customer.username }}</span><span class="customer-phone">📞 {{ o.phone }}</span></div></td>
+            <td><div class="customer-info"><span class="customer-name">{{ o.district }}</span><span class="customer-phone">{{ o.province }}</span></div></td>
+            <td><div class="payment-info"><span class="payment-method">{% if o.payment_method == 'ESEWA' %}📱{% elif o.payment_method == 'KHALTI' %}💳{% elif o.payment_method == 'BANK' %}🏦{% else %}💵{% endif %} {{ o.payment_method }}</span><span class="payment-status {{ o.payment_status|lower }}">{{ o.payment_status }}</span></div></td>
+            <td><span class="amount">{{ o.total|money }}</span></td>
+            <td><span class="status-badge status-{{ o.status|lower }}"><span class="dot"></span>{{ o.status }}</span></td>
+            <td><div class="action-buttons"><a href="/dashboard/order/{{ o.id }}/" class="action-btn primary" title="View">👁️</a><button class="action-btn" title="Copy" onclick="copyOrder('{{ o.order_number }}')">📋</button></div></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8"><div class="empty-state"><div class="icon">📦</div><h4>No orders found</h4><p>Try adjusting your filters.</p><a href="/dashboard/orders/" class="btn btn-primary">↻ Reset</a></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}{% include "storefront/_pagination.html" %}{% endif %}
+    
+    <!-- Mobile Card View -->
+    <div class="mobile-cards">
+      {% for o in orders %}
+        <div class="mobile-order-card">
+        <div class="mobile-order-header">
+          <a href="/dashboard/order/{{ o.id }}/" class="mobile-order-id">{{ o.order_number }}</a>
+          <span class="status-badge status-{{ o.status|lower }}"><span class="dot"></span>{{ o.status }}</span>
+        </div>
+        <div class="mobile-order-body">
+          <div class="mobile-order-item"><span class="label">Customer</span><span class="value">{{ o.customer.username }}</span></div>
+          <div class="mobile-order-item"><span class="label">Date</span><span class="value">{{ o.created_at|date:"M d, Y" }}</span></div>
+          <div class="mobile-order-item"><span class="label">Location</span><span class="value">{{ o.district }}, {{ o.province }}</span></div>
+          <div class="mobile-order-item"><span class="label">Payment</span><span class="value">{% if o.payment_method == 'ESEWA' %}📱{% elif o.payment_method == 'KHALTI' %}💳{% elif o.payment_method == 'BANK' %}🏦{% else %}💵{% endif %} {{ o.payment_method }}<br><span class="payment-status {{ o.payment_status|lower }}" style="font-size:9px;padding:2px 6px;margin-top:4px">{{ o.payment_status }}</span></span></div>
+        </div>
+        <div class="mobile-order-footer">
+          <span class="mobile-order-total">{{ o.total|money }}</span>
+          <a href="/dashboard/order/{{ o.id }}/" class="btn btn-primary btn-sm">View →</a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state"><div class="icon">📦</div><h4>No orders found</h4><p>Try adjusting your filters.</p><a href="/dashboard/orders/" class="btn btn-primary">↻ Reset</a></div>
+      {% endfor %}
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}{% include "storefront/_pagination.html" %}{% endif %}
+  </div>
+</section>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<script>
+function toggleFilters(){var b=document.getElementById('filterBody'),t=document.querySelector('.filter-toggle');if(b.style.display==='none'){b.style.display='grid';t.innerHTML='Hide ▲'}else{b.style.display='none';t.innerHTML='Show ▼'}}
+function filterTable(){var i=document.getElementById('quickSearch'),f=i.value.toLowerCase(),r=document.getElementById('ordersTable').getElementsByTagName('tr');for(var j=1;j<r.length;j++){var s=r[j].getAttribute('data-search');if(s)r[j].style.display=s.toLowerCase().indexOf(f)>-1?'':'none'}
+// Also filter mobile cards
+var cards=document.querySelectorAll('.mobile-order-card');cards.forEach(function(c){var t=c.textContent.toLowerCase();c.style.display=t.indexOf(f)>-1?'':'none'})}
+function copyOrder(n){navigator.clipboard.writeText(n).then(function(){var e=document.createElement('div');e.style.cssText='position:fixed;bottom:20px;right:20px;background:#10b981;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:1000;animation:fadeInOut 2s forwards';e.textContent='✓ Copied!';document.body.appendChild(e);setTimeout(function(){e.remove()},2000)})}
+document.querySelectorAll('#filterForm select').forEach(function(s){s.addEventListener('change',function(){document.getElementById('filterForm').submit()})});
+document.getElementById('filterForm').addEventListener('submit',function(){document.getElementById('loadingOverlay').classList.add('active')});
+</script>
+{% include 'storefront/_dash_footer.html' %}
+{% endblock %}

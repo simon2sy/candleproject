@@ -1,0 +1,28 @@
+{# Dashboard pagination (plain, mobile-friendly) — shared by dashboard pages. #}
+{% load currency %}
+<style>
+.dash-pagination{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:18px 0 6px}
+.dash-pagination a,.dash-pagination span.page-cur{min-width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font-size:14px;text-decoration:none}
+.dash-pagination a:hover{border-color:var(--primary);color:var(--primary)}
+.dash-pagination span.page-cur{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.dash-pagination .page-info{border:none;background:none;color:var(--muted);font-size:13px;min-width:0;padding:0 6px}
+@media(max-width:640px){.dash-pagination a,.dash-pagination span.page-cur{min-width:34px;height:34px;font-size:13px}.dash-pagination .page-info{width:100%;text-align:center;order:9}}
+</style>
+<nav class="dash-pagination" aria-label="Orders pages">
+  {% if page_obj.has_previous %}
+    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">&larr; Prev</a>
+  {% endif %}
+  {% for num in page_links %}
+    {% if num == page_obj.number %}
+      <span class="page-cur" aria-current="page">{{ num }}</span>
+    {% elif num == "…" %}
+      <span class="page-info">…</span>
+    {% else %}
+      <a href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ num }}">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page_obj.has_next %}
+    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next &rarr;</a>
+  {% endif %}
+  <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} · {{ count }} orders</span>
+</nav>

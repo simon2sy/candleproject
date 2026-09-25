@@ -1,0 +1,32 @@
+{% extends "storefront/base.html" %}{% load currency %}{% load static %}{% block title %}Order {{ order.order_number }} — Nismita{% endblock %}
+{% block content %}<section class="section" style="max-width:760px">
+<div class="alert" style="border-left:4px solid #2e9e5b">✅ <b>Order placed: {{ order.order_number }}</b> — status: <b>{{ order.get_status_display }}</b></div>
+{% if order.payment_status == 'VERIFIED' %}
+<div style="background:#ecfdf5;border:1px solid #2e9e5b;border-radius:18px;padding:20px">
+<h3>💰 Payment verified — nothing left to pay</h3>
+<p style="color:var(--muted)">We received <b>{{ order.total|money }}</b> via <b>{{ order.get_payment_method_display }}</b> for {{ order.order_number }}. Your order is <b>{{ order.get_status_display }}</b> and dispatches within 5–6 days — track it in <a href="/orders/">My Orders</a>.</p>
+</div>
+{% else %}
+<div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px">
+<h3>1️⃣ Scan the QR &amp; pay {{ order.total|money }}</h3>
+<p style="color:var(--muted);margin:4px 0 10px">Open <b>eSewa / Khalti / IME Pay / Banking app</b> → Scan &amp; Pay → pay <b>{{ order.total|money }}</b> using this QR:</p>
+<img src="{% static 'img/payment_qr.png' %}" alt="Payment QR code" width="180" height="180" style="display:block;background:#fff;border:2px dashed var(--purple);border-radius:14px;padding:8px;margin:0 auto">
+<p>2️⃣ <b>Send the payment screenshot on WhatsApp</b> 👇</p>
+<a class="btn" style="background:#25D366;border-color:#25D366;display:inline-flex;gap:10px;align-items:center" href="{{ wa_url }}" target="_blank" rel="noopener">💬 Send screenshot & order details on WhatsApp</a>
+<h3 style="margin-top:18px">3️⃣ Admin confirms your order</h3>
+<p style="color:var(--muted)">Once we verify your payment on WhatsApp, your order status changes to <b>Confirmed</b> and we dispatch within 5–6 days. You can track it in <a href="/orders/">My Orders</a>.</p>
+<form method="post" enctype="multipart/form-data" style="margin-top:10px;border-top:1px dashed var(--line);padding-top:12px">{% csrf_token %}
+<b>Or upload your screenshot here</b> (optional backup):<br>
+<input type="file" name="payment_screenshot" accept="image/*" style="margin:8px 0"> <button class="btn ghost">Upload</button>
+{% if order.payment_screenshot %}<p>📎 Uploaded: <a href="{{ order.payment_screenshot.url }}" target="_blank">view</a></p>{% endif %}
+</form>
+</div>
+{% endif %}
+<div style="margin-top:16px;border:1px solid var(--line);border-radius:18px;padding:16px;background:#fff">
+<b>Order summary — {{ order.order_number }}</b>
+{% for i in order.items.all %}<div style="display:flex;justify-content:space-between;padding:6px 0"><span>{{ i.quantity }} × {{ i.product_name }}</span><b>{{ i.total_price|money }}</b></div>{% endfor %}
+<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px dashed var(--line)"><span>Delivery</span><b>{{ order.shipping_cost|money }}</b></div>
+<div style="display:flex;justify-content:space-between"><span><b>Total</b></span><b style="font-size:18px">{{ order.total|money }}</b></div>
+<p style="color:var(--muted);margin-top:8px">📍 {{ order.full_name }} · {{ order.phone }} · {{ order.address_line }}, {{ order.city }}, {{ order.district }}, {{ order.province }}</p>
+</div>
+</section>{% endblock %}

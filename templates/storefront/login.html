@@ -1,0 +1,28 @@
+{% extends "storefront/base.html" %}{% load static %}{% block title %}Sign In — Nismita Craft Studio{% endblock %}
+{% block content %}
+<div style="padding:0 20px"><div class="auth-wrap">
+  <div class="auth-side">
+    <img src="{% static 'img/logo.png' %}" alt="Nismita">
+    <div class="eyebrow" style="background:#fff;color:var(--purple-dark);align-self:flex-start">NISMITA CRAFT STUDIO</div>
+    <h2>Welcome back, maker.</h2>
+    <p>Sign in to sync your cart, wishlist & orders across devices. Your saved cart merges automatically after login.</p>
+    <ul><li>🛒 Persistent cart — login required to buy</li><li>♡ Wishlist & order history</li><li>🚚 Dispatch in 5–6 working days</li></ul>
+  </div>
+  <div class="auth-form">
+    <div class="breadcrumb"><a href="/">Home</a> / Sign In</div>
+    <h1>Sign in</h1>
+    <div class="sub">Access your cart, checkout & orders</div>
+    {% if messages %}{% for m in messages %}<div class="{% if m.tags == 'error' %}auth-errors{% else %}auth-ok{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+    <form method="post" autocomplete="on">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field"><label for="id_user">Username or email</label><input id="id_user" name="username" required autofocus placeholder="e.g. candle_lover" autocomplete="username"></div>
+      <div class="field"><label for="id_pw">Password</label><div class="pw-wrap"><input id="id_pw" name="password" type="password" required placeholder="••••••••" autocomplete="current-password"><button type="button" onclick="var i=document.getElementById('id_pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button></div></div>
+      <div class="auth-meta"><label><input type="checkbox" name="remember" checked> Remember me</label><a href="/register/">Forgot password?</a></div>
+      <button class="btn auth-btn" type="submit">Sign In →</button>
+    </form>
+    <div class="auth-alt">New to Nismita? <a href="/register/{% if next %}?next={{ next }}{% endif %}">Create an account</a></div>
+    <div class="auth-alt" style="margin-top:8px">Store admin? <a href="/admin/login/">Go to supplier / admin login →</a></div>
+  </div>
+</div></div>
+{% endblock %}
+

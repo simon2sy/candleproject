@@ -1,0 +1,26 @@
+{% load static %}
+<div class="card">
+  <div class="card-media">
+    <a href="/product/{{ p.slug }}/" aria-label="{{ p.name }}">
+      {% with img=p.images.first %}{% if img %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:p.name }}" loading="lazy" decoding="async">{% endif %}{% endwith %}
+    </a>
+    {% if p.stock_quantity == 0 %}<span class="ribbon out">Out of stock</span>{% elif p.compare_at_price %}<span class="ribbon save">-{{ p.discount_percent }}%</span>{% endif %}
+    <a class="wish-fab" href="/wishlist/add/{{ p.id }}/" title="Add to wishlist" aria-label="Add {{ p.name }} to wishlist">♡</a>
+  </div>
+  <div class="body">
+    <div class="cname">{{ p.category.name }}</div>
+    <h3><a href="/product/{{ p.slug }}/">{{ p.name }}</a></h3>
+    <div class="price">Rs {{ p.price|floatformat:2 }}{% if p.compare_at_price %}<s>Rs {{ p.compare_at_price|floatformat:2 }}</s>{% endif %}</div>
+    <div class="badges">
+      {% if p.is_featured %}<span class="badge">★ Bestseller</span>{% endif %}
+      {% for t in p.tags.all|slice:":2" %}<span class="badge">{{ t.name }}</span>{% endfor %}
+      {% if p.compare_at_price %}<span class="badge save">Save {{ p.discount_percent }}%</span>{% endif %}
+    </div>
+    <div class="stock-line">{% if p.stock_quantity == 0 %}<span class="no">✕ Sold out</span>{% elif p.stock_quantity <= p.low_stock_threshold %}<span class="low">⚡ Only {{ p.stock_quantity }} left</span>{% else %}<span class="ok">✓ In stock</span> <span class="muted">· {{ p.stock_quantity }} available</span>{% endif %}</div>
+    <div class="card-actions">
+      <a class="btn ghost" href="/product/{{ p.slug }}/">View</a>
+      {% if p.stock_quantity == 0 %}<button class="btn dark" type="button" disabled>Unavailable</button>
+      {% else %}<form action="/cart/add/{{ p.id }}/" method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="quantity" value="1"><button class="btn dark" type="submit">Add to Cart</button></form>{% endif %}
+    </div>
+  </div>
+</div>

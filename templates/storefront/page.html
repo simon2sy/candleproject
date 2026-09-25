@@ -1,0 +1,4 @@
+{% extends "storefront/base.html" %}{% block title %}{{ title }} — Nismita{% endblock %}
+{% block content %}<section class="section"><h2>{{ title }}</h2><div class="sub">{{ subtitle }}</div>{{ body|safe }}
+{% if items %}<div class="grid">{% for p in items %}{% include "storefront/_card.html" with p=p %}{% endfor %}</div>{% endif %}
+</section>{% endblock %}

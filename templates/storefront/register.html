@@ -1,0 +1,30 @@
+{% extends "storefront/base.html" %}{% load static %}{% block title %}Create Account — Nismita Craft Studio{% endblock %}
+{% block content %}
+<div style="padding:0 20px"><div class="auth-wrap">
+  <div class="auth-side">
+    <img src="{% static 'img/logo.png' %}" alt="Nismita">
+    <div class="eyebrow" style="background:#fff;color:var(--purple-dark);align-self:flex-start">JOIN NISMITA</div>
+    <h2>Start your candle journey.</h2>
+    <p>One account for cart, wishlist, checkout &amp; order tracking. Everything is made and shipped by Nismita Craft Studio — accounts are for customers.</p>
+    <ul><li>✓ Instant customer account</li><li>✓ Cart saved & merged on login</li><li>✓ Order dispatch in 5–6 days</li></ul>
+  </div>
+  <div class="auth-form">
+    <div class="breadcrumb"><a href="/">Home</a> / Register</div>
+    <h1>Create account</h1>
+    <div class="sub">Customer accounts — one maker &amp; supplier: Nismita Craft Studio</div>
+    {% if messages %}{% for m in messages %}<div class="{% if m.tags == 'error' %}auth-errors{% else %}auth-ok{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+    <form method="post" autocomplete="on">{% csrf_token %}
+      <div class="field-row">
+        <div class="field"><label for="r_user">Username</label><input id="r_user" name="username" required placeholder="candle_lover" autocomplete="username" value="{{ request.POST.username }}"></div>
+        <div class="field"><label for="r_email">Email</label><input id="r_email" name="email" type="email" required placeholder="you@email.com" autocomplete="email" value="{{ request.POST.email }}"></div>
+      </div>
+      <div class="field"><label for="r_pw1">Password (min 8 chars)</label><div class="pw-wrap"><input id="r_pw1" name="password" type="password" required minlength="8" placeholder="Choose a strong password" autocomplete="new-password" oninput="var b=this.value;var s=document.getElementById('pwbar');var sc=0;if(b.length>=8)sc++;if(/[A-Z]/.test(b)&&/[a-z]/.test(b))sc++;if(/\d/.test(b))sc++;if(/[^A-Za-z0-9]/.test(b))sc++;s.style.width=(sc*25)+'%';"><button type="button" onclick="var i=document.getElementById('r_pw1');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button></div><div class="auth-strength"><i id="pwbar"></i></div></div>
+      <div class="field"><label for="r_pw2">Confirm password</label><input id="r_pw2" name="password2" type="password" required placeholder="Repeat password" autocomplete="new-password"></div>
+      <button class="btn auth-btn" type="submit">Create Account →</button>
+    </form>
+    <div class="auth-alt">Already have an account? <a href="/login/">Sign in</a></div>
+    <div class="auth-alt" style="margin-top:8px;font-size:12px">By registering you agree to our Terms & Privacy Policy.</div>
+  </div>
+</div></div>
+{% endblock %}
+
