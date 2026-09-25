@@ -15,11 +15,11 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def _parse_database_url(url: str):
-    """Parse DATABASE_URL into Django DATABASES settings.
+    """Parse PostgreSQL or MySQL DATABASE_URL into Django DATABASES settings.
 
     Local development may use SQLite when DATABASE_URL is empty. Production must
-    provide PostgreSQL explicitly so a production process cannot silently fall
-    back to an untracked local database file.
+    provide a supported database explicitly so it cannot silently fall back to
+    an untracked local database file.
     """
     if not url:
         if not DEBUG:
@@ -29,19 +29,34 @@ def _parse_database_url(url: str):
             "NAME": BASE_DIR / "db.sqlite3",
         }
     parsed = urlparse(url)
-    if parsed.scheme not in ("postgres", "postgresql"):
-        raise ImproperlyConfigured("DATABASE_URL must use postgres:// or postgresql://.")
+    if parsed.scheme not in ("postgres", "postgresql", "mysql"):
+        raise ImproperlyConfigured("DATABASE_URL must use postgres:// or mysql://.")
     if not parsed.hostname or not parsed.path.lstrip("/"):
         raise ImproperlyConfigured("DATABASE_URL must include a host and database name.")
+    if parsed.scheme in ("postgres", "postgresql"):
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "CONN_MAX_AGE": int(os.getenv("DATABASE_CONN_MAX_AGE", "60")),
+            "OPTIONS": {"connect_timeout": int(os.getenv("DATABASE_CONNECT_TIMEOUT", "5"))},
+            "NAME": parsed.path.lstrip("/"),
+            "USER": parsed.username,
+            "PASSWORD": parsed.password,
+            "HOST": parsed.hostname,
+            "PORT": parsed.port or "5432",
+        }
     return {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.db.backends.mysql",
         "CONN_MAX_AGE": int(os.getenv("DATABASE_CONN_MAX_AGE", "60")),
-        "OPTIONS": {"connect_timeout": int(os.getenv("DATABASE_CONNECT_TIMEOUT", "5"))},
+        "OPTIONS": {
+            "charset": "utf8mb4",
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "connect_timeout": int(os.getenv("DATABASE_CONNECT_TIMEOUT", "5")),
+        },
         "NAME": parsed.path.lstrip("/"),
         "USER": parsed.username,
         "PASSWORD": parsed.password,
         "HOST": parsed.hostname,
-        "PORT": parsed.port or "5432",
+        "PORT": parsed.port or "3306",
     }
 
 

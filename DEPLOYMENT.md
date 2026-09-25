@@ -19,6 +19,8 @@ Set environment variables outside the repository:
 DEBUG=False
 SECRET_KEY=<long random value>
 DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DATABASE
+# Himalayan Host MySQL alternative:
+# DATABASE_URL=mysql://USER:PASSWORD@localhost:3306/DATABASE
 ALLOWED_HOSTS=shop.example.com
 CORS_ALLOWED_ORIGINS=https://admin.example.com
 CSRF_TRUSTED_ORIGINS=https://shop.example.com
