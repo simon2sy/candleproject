@@ -18,7 +18,7 @@
 <form method="post" enctype="multipart/form-data" style="margin-top:10px;border-top:1px dashed var(--line);padding-top:12px">{% csrf_token %}
 <b>Or upload your screenshot here</b> (optional backup):<br>
 <input type="file" name="payment_screenshot" accept="image/*" style="margin:8px 0"> <button class="btn ghost">Upload</button>
-{% if order.payment_screenshot %}<p>📎 Uploaded: <a href="{{ order.payment_screenshot.url }}" target="_blank">view</a></p>{% endif %}
+{% if order.payment_screenshot %}<p>📎 Uploaded: <a href="{% url 'storefront:payment-screenshot' number=order.order_number %}" target="_blank" rel="noopener">view</a></p>{% endif %}
 </form>
 </div>
 {% endif %}

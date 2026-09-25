@@ -33,8 +33,8 @@
     <p><b>{{ order.get_payment_method_display }}</b> — {{ order.get_payment_status_display }}<br>
     {% if order.payment_reference %}Ref: <code>{{ order.payment_reference }}</code><br>{% endif %}
     {% if order.payment_screenshot %}
-      <a href="{{ order.payment_screenshot.url }}" target="_blank"><img class="od-shot" src="{{ order.payment_screenshot.url }}" alt="Payment screenshot"></a>
-      <small><a href="{{ order.payment_screenshot.url }}" target="_blank">🔍 Open full screenshot</a></small>
+      <a href="{% url 'storefront:dashboard-payment-screenshot' pk=order.pk %}" target="_blank" rel="noopener"><img class="od-shot" src="{% url 'storefront:dashboard-payment-screenshot' pk=order.pk %}" alt="Payment screenshot"></a>
+      <small><a href="{% url 'storefront:dashboard-payment-screenshot' pk=order.pk %}" target="_blank" rel="noopener">🔍 Open full screenshot</a></small>
     {% else %}<small class="od-muted">No screenshot uploaded — check WhatsApp.</small>{% endif %}
     </p>
   </div>

@@ -1,7 +1,9 @@
 """Catalog models: categories, products, variants, images, attributes, tags, inventory."""
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, validate_image_file_extension
 from django.db import models
+
+from .validators import ProductImageValidator
 
 
 class Category(models.Model):
@@ -122,7 +124,10 @@ class ProductVariant(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="products/%Y/%m/")
+    image = models.ImageField(
+        upload_to="products/%Y/%m/",
+        validators=[validate_image_file_extension, ProductImageValidator()],
+    )
     alt_text = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)

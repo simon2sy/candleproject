@@ -14,6 +14,7 @@ from django.core.paginator import Paginator
 from django.db import models, transaction
 from django.db.models import Count, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import FileResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -301,12 +302,14 @@ def register_view(request):
     return render(request, "storefront/register.html", ctx)
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     messages.success(request, "Signed out.")
     return redirect("storefront:home")
 
 
+@require_POST
 def cart_add(request, pk):
     product = get_object_or_404(Product, pk=pk, is_active=True)
     try:
@@ -362,6 +365,7 @@ def cart_view(request):
 
 
 @login_required
+@require_POST
 def cart_update(request, pk):
     cart = _get_or_create_cart(request)
     item = get_object_or_404(CartItem, pk=pk, cart=cart)
@@ -375,6 +379,7 @@ def cart_update(request, pk):
 
 
 @login_required
+@require_POST
 def cart_remove(request, pk):
     cart = _get_or_create_cart(request)
     CartItem.objects.filter(pk=pk, cart=cart).delete()
@@ -514,7 +519,7 @@ def checkout(request):
             order.save(update_fields=["payment_screenshot", "updated_at"])
 
         # eSewa online payment: render the auto-submitting ePay v2 form when the
-        # gateway is configured; otherwise fall through to the manual WhatsApp flow.
+        # gateway is configured; otherwise fall through to the manual QR/WhatsApp flow.
         if payment_method == Order.PaymentMethod.ESEWA:
             pay_mode, pay_payload = _start_esewa_payment(request, order_num)
             if pay_mode == "form":
@@ -556,6 +561,17 @@ def order_success(request, number):
 
 
 @login_required
+def payment_screenshot(request, number):
+    """Serve a screenshot only to its owner or a staff member."""
+    order = get_object_or_404(Order, order_number=number)
+    if not (request.user.is_staff or request.user.is_superuser or order.customer_id == request.user.id):
+        return get_object_or_404(Order, pk=-1)
+    if not order.payment_screenshot:
+        return HttpResponseNotFound("Payment screenshot not found.")
+    return FileResponse(order.payment_screenshot.open("rb"), content_type="image/*")
+
+
+@login_required
 def orders_view(request):
     g = _staff_guard(request)
     if g:
@@ -574,8 +590,31 @@ def orders_view(request):
 
 
 def about(request):
-    ctx = {"title": "About Us", "subtitle": "Nismita Craft Studio", "items": [],
-           "body": "<p>We supply premium candle-making materials — wax, wicks, silicone molds, colours & glitters — curated for makers, inspired by ukiyointernational.com.</p>"}
+    body = """
+    <div class="about-content">
+      <p>Welcome to <strong>Nismita Craft Studio</strong>, a Kathmandu-based supplier for candle makers, soap makers, home crafters, studios, and growing craft businesses. We help you find dependable materials for making beautiful, consistent finished products at home or in your workspace.</p>
+
+      <h3>What we supply</h3>
+      <p>Our collection covers the everyday essentials for candle and cold-process soap making. You can browse waxes, wicks, fragrance oils, silicone molds, soap bases, oils, lye, colourants, mica colours, glitter, additives, and practical tools. Whether you are making a small batch for yourself or preparing supplies for your studio, we want your materials to be easy to understand and reliable to use.</p>
+
+      <h3>Why choose us?</h3>
+      <ul>
+        <li><strong>Maker-focused selection:</strong> We choose products with practical use in mind, so you can spend less time comparing and more time creating.</li>
+        <li><strong>Quality and consistency:</strong> We carefully handle our stock and check materials before they are packed for customers.</li>
+        <li><strong>Guidance when you need it:</strong> Questions about wax, wicks, molds, colours, or tools? Contact us and we will help you choose a sensible starting point.</li>
+        <li><strong>Delivery across Nepal:</strong> We dispatch confirmed orders from Kathmandu to customers throughout Nepal. Delivery timing may vary by location and courier partner.</li>
+        <li><strong>Personal service:</strong> From your first small order to a regular studio restock, we want the experience to feel straightforward and human.</li>
+      </ul>
+
+      <h3>Made for your creative journey</h3>
+      <p>You do not need a large factory or advanced experience to make beautiful handmade products. A properly prepared workspace, a few dependable materials, and a little experimentation are enough to begin. Our role is to make the supply stage easier, so you can focus on learning, designing, and enjoying the process.</p>
+      <p>Visit our <a href="/shop/">shop</a> to explore the current collection. If you are unsure where to start, send us a message on WhatsApp and tell us what you would like to make. We are happy to help you choose a practical combination for your first project.</p>
+
+      <h3>Our promise to customers</h3>
+      <p>We aim to provide clear product information, careful order handling, and responsive communication. If you have a question before or after ordering, contact us and we will do our best to assist you. Thank you for supporting handmade craft and choosing Nismita Craft Studio.</p>
+    </div>
+    """
+    ctx = {"title": "About Us", "subtitle": "Reliable materials for handmade candle and soap makers in Nepal", "items": [], "body": body}
     ctx.update(_nav(request))
     return render(request, "storefront/page.html", ctx)
 

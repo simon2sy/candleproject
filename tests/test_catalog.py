@@ -1,9 +1,15 @@
 """Catalog isolation, filtering, privacy, wishlist, order tests."""
 from decimal import Decimal
 
-from accounts.models import Address
-from catalog.models import Category
+from io import BytesIO
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
+from PIL import Image
+
+from accounts.models import Address, User
+from catalog.models import Category, Product
 from orders.models import Order, OrderItem, Wishlist, WishlistItem
 from rest_framework.test import APIClient
 
@@ -36,6 +42,54 @@ class CatalogIsolationTests(TestCase):
         self.assertEqual(prices, sorted(prices))
         res2 = self.ca.get("/api/v1/products/?min_price=400&max_price=700")
         self.assertTrue(all(400 <= float(r["price"]) <= 700 for r in res2.data["results"]))
+
+
+class DashboardProductPhotoTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username="photo_admin", email="photo_admin@example.com",
+            password="Testpass123!", is_staff=True,
+        )
+        self.category = Category.objects.create(name="Photos", slug="photos")
+        self.client.force_login(self.staff)
+
+    def _file(self, name, image_format="PNG"):
+        image = Image.new("RGB", (20, 20), "red")
+        output = BytesIO()
+        image.save(output, format=image_format)
+        return SimpleUploadedFile(name, output.getvalue(), content_type=f"image/{image_format.lower()}")
+
+    def test_dashboard_stores_multiple_photos_and_renders_thumbnails(self):
+        response = self.client.post(reverse("storefront:dashboard-add-product"), {
+            "name": "Photo set", "category": self.category.pk, "price": "12.50", "stock": "2",
+            "images": [self._file("one.png"), self._file("two.jpg", "JPEG")],
+        })
+        self.assertRedirects(response, reverse("storefront:dashboard-products"))
+        product = Product.objects.get(name="Photo set")
+        self.assertEqual(product.images.count(), 2)
+        self.assertEqual(list(product.images.values_list("display_order", flat=True)), [0, 1])
+        self.assertEqual(list(product.images.values_list("is_primary", flat=True)), [True, False])
+        session = self.client.session
+        session["customer_preview"] = True
+        session.save()
+        detail = self.client.get(reverse("storefront:detail", kwargs={"slug": product.slug}))
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "data-image-src=", count=2)
+
+    def test_dashboard_rejects_invalid_image(self):
+        response = self.client.post(reverse("storefront:dashboard-add-product"), {
+            "name": "Bad photo", "category": self.category.pk, "price": "12.50", "stock": "2",
+            "images": SimpleUploadedFile("payload.svg", b"<svg onload=alert(1)>", content_type="image/svg+xml"),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upload a valid JPG, PNG or WebP image.")
+        self.assertFalse(Product.objects.filter(name="Bad photo").exists())
+
+    def test_logout_requires_post(self):
+        self.assertEqual(self.client.get(reverse("storefront:logout")).status_code, 405)
+        response = self.client.post(reverse("storefront:logout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
 
 
 class PrivacyTests(TestCase):

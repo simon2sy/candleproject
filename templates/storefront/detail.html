@@ -167,7 +167,7 @@
     </div>
     <div class="pdp-thumbnails">
       {% for im in product.images.all %}
-        <div class="pdp-thumb {% if forloop.first %}active{% endif %}" onclick="changeImage('{{ im.image.url }}', this, {{ forloop.counter }})">
+        <div class="pdp-thumb {% if im == product.primary_image %}active{% endif %}" data-image-src="{{ im.image.url }}" data-image-number="{{ forloop.counter }}" tabindex="0" role="button" onclick="changeImage(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeImage(this)}">
           <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }} thumbnail {{ forloop.counter }}">
         </div>
       {% endfor %}
@@ -356,12 +356,14 @@
 
 <script>
 // Image Gallery
-function changeImage(src, thumb, num) {
+function changeImage(thumb) {
+  var src = thumb.dataset.imageSrc;
+  if (!src) return;
   document.getElementById('mainImg').src = src;
   document.querySelectorAll('.pdp-thumb').forEach(function(t) { t.classList.remove('active'); });
   thumb.classList.add('active');
   var counter = document.getElementById('imgCounter');
-  if (counter) counter.textContent = num + ' / ' + document.querySelectorAll('.pdp-thumb').length;
+  if (counter) counter.textContent = thumb.dataset.imageNumber + ' / ' + document.querySelectorAll('.pdp-thumb').length;
 }
 
 // Variant Selection

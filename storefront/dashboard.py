@@ -17,6 +17,7 @@ from django.utils.text import slugify
 
 from accounts.models import SellerProfile, User
 from catalog.models import Category, Product, ProductImage, ProductVariant
+from catalog.validators import ProductImageValidator
 from orders.models import Order, OrderItem
 
 from .views import _nav
@@ -188,19 +189,23 @@ def _add_product(request):
             errors.append("Stock must be a whole number of units (0 or more).")
             stock = 0
 
-    image = request.FILES.get("image")
-    if image and image.size > 5 * 1024 * 1024:
-        errors.append("Image must be smaller than 5 MB.")
-        image = None
-    if image:
-        try:
-            from PIL import Image
+    images = request.FILES.getlist("images")
+    # Keep the old single-file field compatible with existing clients/bookmarks.
+    if not images and request.FILES.get("image"):
+        images = [request.FILES["image"]]
+    if len(images) > 8:
+        errors.append("Upload no more than 8 product photos.")
+        images = images[:8]
 
-            Image.open(image).verify()
-            image.seek(0)
-        except Exception:
-            errors.append("That file is not a valid image — upload a JPG or PNG.")
-            image = None
+    image_validator = ProductImageValidator()
+    valid_images = []
+    for image in images:
+        try:
+            image_validator(image)
+        except Exception as exc:
+            errors.append(getattr(exc, "messages", [str(exc)])[0])
+            continue
+        valid_images.append(image)
 
     if errors:
         return _add_product_page(request, errors, values)
@@ -228,13 +233,26 @@ def _add_product(request):
             is_active=True,
             is_available=True,
         )
-        if image:
+        for order, image in enumerate(valid_images):
             ProductImage.objects.create(
-                product=product, image=image, alt_text=name, is_primary=True
+                product=product,
+                image=image,
+                alt_text=name,
+                is_primary=order == 0,
+                display_order=order,
             )
 
     messages.success(request, f"“{name}” was added to your shop.")
     return redirect("storefront:dashboard-products")
+
+
+@staff_member_required
+def dashboard_payment_screenshot(request, pk):
+    """Serve payment screenshots to staff without exposing the media directory."""
+    order = get_object_or_404(Order, pk=pk)
+    if not order.payment_screenshot:
+        return HttpResponseNotFound("Payment screenshot not found.")
+    return FileResponse(order.payment_screenshot.open("rb"), content_type="image/*")
 
 
 @staff_member_required

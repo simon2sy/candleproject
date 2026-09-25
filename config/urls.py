@@ -9,6 +9,7 @@ from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 
+from config.health import healthz, readyz
 from storefront.sitemaps import CategorySitemap, ProductSitemap, StaticViewSitemap
 
 SITEMAPS = {
@@ -41,6 +42,8 @@ admin.site.site_title = "Nismita Supplier Admin"
 admin.site.index_title = "Manage catalogue, orders & customers"
 
 urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
+    path("readyz/", readyz, name="readyz"),
     path("admin/", admin.site.urls),
     path("robots.txt", robots_txt, name="robots"),
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="django.contrib.sitemaps.views.sitemap"),

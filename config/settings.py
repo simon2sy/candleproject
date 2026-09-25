@@ -15,19 +15,28 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def _parse_database_url(url: str):
-    """Parse a postgres DATABASE_URL into Django DATABASES dict.
+    """Parse DATABASE_URL into Django DATABASES settings.
 
-    Falls back to sqlite when DATABASE_URL is empty (local dev without postgres).
-    Production should always set DATABASE_URL (PostgreSQL per spec).
+    Local development may use SQLite when DATABASE_URL is empty. Production must
+    provide PostgreSQL explicitly so a production process cannot silently fall
+    back to an untracked local database file.
     """
     if not url:
+        if not DEBUG:
+            raise ImproperlyConfigured("DATABASE_URL is required when DEBUG=False.")
         return {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
         }
     parsed = urlparse(url)
+    if parsed.scheme not in ("postgres", "postgresql"):
+        raise ImproperlyConfigured("DATABASE_URL must use postgres:// or postgresql://.")
+    if not parsed.hostname or not parsed.path.lstrip("/"):
+        raise ImproperlyConfigured("DATABASE_URL must include a host and database name.")
     return {
         "ENGINE": "django.db.backends.postgresql",
+        "CONN_MAX_AGE": int(os.getenv("DATABASE_CONN_MAX_AGE", "60")),
+        "OPTIONS": {"connect_timeout": int(os.getenv("DATABASE_CONNECT_TIMEOUT", "5"))},
         "NAME": parsed.path.lstrip("/"),
         "USER": parsed.username,
         "PASSWORD": parsed.password,
@@ -187,11 +196,10 @@ else:
     SESSION_COOKIE_HTTPONLY = True
     X_FRAME_OPTIONS = "DENY"
 
-# --- Proxy / tunnel awareness (applies to dev demos AND production) ---
-# Edges (Cloudflare Tunnel, nginx, Render...) terminate HTTPS and forward plain
-# HTTP to Django. Trusting X-Forwarded-Proto lets request.is_secure() and the
-# CSRF origin check see the visitor's real scheme.
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Trust proxy headers only when the deployment is behind a trusted HTTPS proxy.
+# Do not enable this when Django is directly reachable from the public internet.
+if os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("1", "true", "yes"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CSRF trusted origins: env override + every allowed host + Cloudflare
 # quick-tunnel demo URLs, so login/register/checkout POSTs never 403 behind an
@@ -206,7 +214,7 @@ for _h in ALLOWED_HOSTS:
     _origin = f"https://*{_h}" if _h.startswith(".") else f"https://{_h}"
     if _origin not in _csrf_origins:
         _csrf_origins.append(_origin)
-if "https://*.trycloudflare.com" not in _csrf_origins:
+if DEBUG and "https://*.trycloudflare.com" not in _csrf_origins:
     _csrf_origins.append("https://*.trycloudflare.com")
 CSRF_TRUSTED_ORIGINS = _csrf_origins
 
@@ -264,7 +272,9 @@ SIMPLE_JWT = {
 }
 
 # --- CORS (open for local React dev; tighten in production) ---
-_CORS_ORIGINS_ENV = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+# CORS is disabled unless explicitly configured. Never expose credentialed APIs
+# to arbitrary browser origins in production.
+_CORS_ORIGINS_ENV = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000" if DEBUG else "")
 CORS_ALLOWED_ORIGINS = [
     o.strip()
     for o in _CORS_ORIGINS_ENV.split(",")

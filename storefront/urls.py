@@ -23,6 +23,7 @@ urlpatterns = [
     path("checkout/", views.checkout, name="checkout"),
     path("orders/", views.orders_view, name="orders"),
     path("orders/<str:number>/", views.order_success, name="order-success"),
+    path("orders/<str:number>/payment-screenshot/", views.payment_screenshot, name="payment-screenshot"),
     path("payment/esewa/callback/", views.esewa_callback, name="esewa-callback"),
     path("wishlist/", views.wishlist, name="wishlist"),
     path("wishlist/add/<int:pk>/", views.wishlist_add, name="wishlist-add"),
@@ -35,4 +36,5 @@ urlpatterns = [
     path("dashboard/sales/", RedirectView.as_view(url="/dashboard/report/", permanent=False), name="dashboard-sales"),
     path("dashboard/orders/", dashboard.dashboard_orders, name="dashboard-orders"),
     path("dashboard/order/<int:pk>/", dashboard.dashboard_order, name="dashboard-order"),
+    path("dashboard/order/<int:pk>/payment-screenshot/", dashboard.dashboard_payment_screenshot, name="dashboard-payment-screenshot"),
 ]

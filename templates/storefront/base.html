@@ -76,7 +76,7 @@
     {% if user.is_authenticated and user.is_staff and not request.session.customer_preview %}
       <a class="btn sm" href="/dashboard/">🛠️ Dashboard</a>
       <a class="btn dark sm" href="/admin/">Admin</a>
-      <a class="out" href="/logout/">Out</a>
+      <form method="post" action="{% url 'storefront:logout' %}" class="inline-form">{% csrf_token %}<button class="out" type="submit">Out</button></form>
     {% else %}
       <form class="search" action="/shop/" method="get"><input name="search" placeholder="Search products…" value="{{ request.GET.search }}" aria-label="Search"><button type="submit" aria-label="Search">⌕</button></form>
       {% if user.is_authenticated %}
@@ -84,7 +84,7 @@
         <button type="button" class="hicon search-toggle" id="searchToggle" aria-label="Search" onclick="var f=document.getElementById('msearch');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('input').focus();">🔍</button>
         <a class="hicon" href="/cart/" title="Cart">🛒{% if cart_count %}<span class="count">{{ cart_count }}</span>{% endif %}</a>
         <a class="hicon" href="/orders/" title="My Orders">📦</a>
-        <span class="hi">Hi {{ user.username }}</span><a class="out" href="/logout/">Out</a>
+        <span class="hi">Hi {{ user.username }}</span><form method="post" action="{% url 'storefront:logout' %}" class="inline-form">{% csrf_token %}<button class="out" type="submit">Out</button></form>
       {% else %}
         <a class="hicon" href="/login/" title="Wishlist">♡</a>
         <button type="button" class="hicon search-toggle" id="searchToggle" aria-label="Search" onclick="var f=document.getElementById('msearch');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('input').focus();">🔍</button>
@@ -117,7 +117,7 @@
   {% if user.is_authenticated %}
     <a href="/wishlist/">♡ Wishlist</a>
     <a href="/orders/">📦 My Orders</a>
-    <a href="/logout/">↩ Sign Out ({{ user.username }})</a>
+    <form method="post" action="{% url 'storefront:logout' %}" class="inline-form">{% csrf_token %}<button type="submit">↩ Sign Out ({{ user.username }})</button></form>
   {% else %}
     <a href="/login/">➜ Sign In</a>
     <a href="/register/">✚ Create Account</a>

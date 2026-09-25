@@ -250,7 +250,7 @@
       <a href="?{{ request.GET.urlencode }}&export=csv" class="btn btn-primary">
         ⬇️ Export CSV
       </a>
-      <a href="/logout/" class="btn btn-secondary" style="color:var(--danger);border-color:var(--danger)">↩️ Logout</a>
+      <form method="post" action="{% url 'storefront:logout' %}" class="inline-form">{% csrf_token %}<button class="btn btn-secondary" type="submit" style="color:var(--danger);border-color:var(--danger)">↩️ Logout</button></form>
     </div>
   </div>
 

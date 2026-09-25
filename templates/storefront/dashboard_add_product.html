@@ -30,7 +30,7 @@
         <div class='ap-field'><label for='ap-price'>Price (Rs) <span>*</span></label><input id='ap-price' name='price' type='number' step='0.01' min='0' placeholder='999' value='{{ form_values.price }}'></div>
         <div class='ap-field'><label for='ap-stock'>Stock quantity</label><input id='ap-stock' name='stock' type='number' step='1' min='0' placeholder='0' value='{{ form_values.stock }}'><span class='ap-hint'>Units in stock. Leave empty for 0.</span></div>
         <div class='ap-field full'><label for='ap-desc'>Short description</label><textarea id='ap-desc' name='description' rows='2' maxlength='500' placeholder='Shown under the product name in the shop'>{{ form_values.description }}</textarea></div>
-        <div class='ap-field'><label for='ap-img'>Product image (optional)</label><input id='ap-img' name='image' type='file' accept='image/*'><span class='ap-hint'>JPG or PNG, up to 5 MB.</span></div>
+        <div class='ap-field'><label for='ap-img'>Product photos (optional)</label><input id='ap-img' name='images' type='file' accept='image/jpeg,image/png,image/webp' multiple><span class='ap-hint'>Select up to 8 JPG, PNG or WebP photos. The first is the cover photo; max 5 MB each.</span></div>
       </div>
       <div style='margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap'>
         <button class='btn btn-primary' type='submit'>➕ Add product</button>

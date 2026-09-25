@@ -4,6 +4,18 @@ from django.urls import reverse
 from accounts.models import User
 
 
+class HealthEndpointTests(TestCase):
+    def test_liveness_endpoint_is_public(self):
+        response = self.client.get(reverse("healthz"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
+    def test_readiness_endpoint_checks_database(self):
+        response = self.client.get(reverse("readyz"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ready"})
+
+
 class CustomerPreviewAccessTests(TestCase):
     """Only signed-in staff may temporarily inspect the customer storefront."""
 
