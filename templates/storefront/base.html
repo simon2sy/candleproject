@@ -14,7 +14,7 @@
 <meta property="og:title" content="{% block og_title %}{{ self.seo_title }}{% endblock %}">
 <meta property="og:description" content="{% block og_description %}{{ self.seo_description }}{% endblock %}">
 <meta property="og:url" content="{{ request.build_absolute_uri }}">
-{% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}">{% endblock %}
+{% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}">{% endblock %}<meta property="og:image:width" content="800"><meta property="og:image:height" content="600"><meta property="og:image:alt" content="Nismita Craft Studio founder photo">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{% block twitter_title %}{{ self.seo_title }}{% endblock %}">
 <meta name="twitter:description" content="{% block twitter_description %}{{ self.seo_description }}{% endblock %}">

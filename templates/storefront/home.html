@@ -24,7 +24,12 @@
       "url": "{{ request.build_absolute_uri }}",
       "name": "Nismita Craft Studio",
       "publisher": {"@id": "{{ request.build_absolute_uri }}#organization"},
-      "inLanguage": "en-NP"
+      "inLanguage": "en-NP",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {"@type": "EntryPoint", "urlTemplate": "{{ request.build_absolute_uri }}shop/?search={search_term_string}"},
+        "query-input": "required name=search_term_string"
+      }
     },
     {
       "@type": "Store",
@@ -36,9 +41,16 @@
       "telephone": "+977-970-8909514",
       "priceRange": "NPR",
       "currenciesAccepted": "NPR",
-      "paymentAccepted": "QR payment",
+      "paymentAccepted": "QR payment, Cash on Delivery",
       "areaServed": {"@type": "Country", "name": "Nepal"},
       "address": {"@type": "PostalAddress", "streetAddress": "Narephate-32", "addressLocality": "Kathmandu", "addressCountry": "NP"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "{{ request.build_absolute_uri }}#breadcrumb",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ request.build_absolute_uri }}"}
+      ]
     }
   ]
 }

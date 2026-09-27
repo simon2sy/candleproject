@@ -3,11 +3,25 @@
 {% block seo_description %}{% if category and category.description %}{{ category.description|truncatechars:150 }}{% elif category %}Shop {{ category.name }} and quality candle making materials in Nepal from Nismita Craft Studio.{% else %}Shop candle making and cold process soap materials across Nepal, including wax, soap bases, wicks, molds, fragrance oils, colours and tools.{% endif %}{% endblock %}
 {% block seo_robots %}{% if search %}noindex,follow{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
 {% block og_type %}website{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ request.build_absolute_uri '/' }}"},
+    {"@type": "ListItem", "position": 2, "name": "Shop", "item": "{{ request.build_absolute_uri '/shop/' }}"}{% if category %},
+    {"@type": "ListItem", "position": 3, "name": "{{ category.name }}", "item": "{{ request.build_absolute_uri '/category/' }}{{ category.slug }}/"}
+    {% endif %}
+  ]
+}
+</script>
+{% endblock %}
 {% block content %}<section class="section">
 <div class="breadcrumb"><a href="/">Home</a> / {% if category %}<a href="/shop/">Shop</a> / {{ category.name }}{% else %}Shop{% endif %}</div>
 <div class="section-head">
   <div>
-    <h2>{% if category %}{{ category.name }}{% else %}Shop All Supplies{% endif %}</h2>
+    <h1>{% if category %}{{ category.name }}{% else %}Shop All Supplies{% endif %}</h1>
     <div class="sub">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }} · filter by category, price or keyword</div>
   </div>
   <span class="count-pill">{{ products.paginator.count }} item{{ products.paginator.count|pluralize }}</span>

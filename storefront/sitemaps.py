@@ -10,10 +10,22 @@ class StaticViewSitemap(Sitemap):
     changefreq = "weekly"
 
     def items(self):
-        return ["storefront:home", "storefront:shop", "storefront:about", "storefront:contact"]
+        return [
+            ("storefront:home", 1.0),
+            ("storefront:shop", 0.8),
+            ("storefront:about", 0.7),
+            ("storefront:contact", 0.7),
+        ]
 
     def location(self, item):
-        return reverse(item)
+        return reverse(item[0])
+
+    def priority(self, item):
+        return item[1]
+
+    def lastmod(self, item):
+        from django.utils import timezone
+        return timezone.now()
 
 
 class ProductSitemap(Sitemap):
@@ -27,6 +39,9 @@ class ProductSitemap(Sitemap):
     def location(self, item):
         return reverse("storefront:detail", kwargs={"slug": item.slug})
 
+    def lastmod(self, item):
+        return item.updated_at
+
 
 class CategorySitemap(Sitemap):
     protocol = "https"
@@ -38,3 +53,6 @@ class CategorySitemap(Sitemap):
 
     def location(self, item):
         return reverse("storefront:category", kwargs={"slug": item.slug})
+
+    def lastmod(self, item):
+        return item.updated_at
