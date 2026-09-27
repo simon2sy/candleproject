@@ -23,9 +23,7 @@ class StaticViewSitemap(Sitemap):
     def priority(self, item):
         return item[1]
 
-    def lastmod(self, item):
-        from django.utils import timezone
-        return timezone.now()
+    
 
 
 class ProductSitemap(Sitemap):
