@@ -5,6 +5,7 @@ __pycache__/
 *.pyo
 db.sqlite3
 media/
+private_media/
 staticfiles/
 logs/
 *.log

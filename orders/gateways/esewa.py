@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html
 import hmac
 import json
 import logging
@@ -141,14 +142,21 @@ class EsewaGateway(PaymentGateway):
         return _ENDPOINTS.get(self.environment, _ENDPOINTS["TEST"])
 
     def get_initiate_form(self, order, base_url: str) -> str:
-        """Full auto-submitting HTML form for ePay v2 (recommended entry)."""
+        """Full auto-submitting HTML form for ePay v2 (recommended entry).
+
+        Every value is HTML-escaped: the payload includes ``success_url`` /
+        ``failure_url``, which are built from the incoming request host, and the
+        template renders this markup with ``|safe``.
+        """
         url = self.initiate(order, base_url)
         fields = getattr(self, "_pending_form_fields", {})
         inputs = "".join(
-            f'<input type="hidden" name="{k}" value="{v}"/>' for k, v in fields.items()
+            f'<input type="hidden" name="{html.escape(k, quote=True)}" '
+            f'value="{html.escape(str(v), quote=True)}"/>'
+            for k, v in fields.items()
         )
         return (
-            f'<form id="esewa-form" method="POST" action="{url}">{inputs}'
+            f'<form id="esewa-form" method="POST" action="{html.escape(url, quote=True)}">{inputs}'
             '<noscript><button type="submit">Continue to eSewa</button></noscript></form>'
             "<script>document.getElementById('esewa-form').submit();</script>"
         )

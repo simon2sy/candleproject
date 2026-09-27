@@ -11,18 +11,20 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Count, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import FileResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from accounts.models import Address, User
 from catalog.models import Category, Product, ProductVariant
+from config.ratelimit import AttemptLimiter, client_ip
 from orders.gateways import TransactionResult, gateway_ready, get_gateway
 from orders.models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 from orders.services import InsufficientStock, _display_price, place_order_from_cart
@@ -31,6 +33,60 @@ from orders.validators import validate_payment_screenshot
 from .nepal import PROVINCES, PROVINCE_CHOICES
 
 logger = logging.getLogger(__name__)
+
+# Brute-force protection for the template forms.  The JSON API is throttled by
+# DRF (``config.throttles``), but ``/login/`` and ``/register/`` are plain Django
+# views, so they had no limit at all and could be used to guess passwords
+# indefinitely.
+login_limiter = AttemptLimiter(
+    "login",
+    max_attempts=settings.LOGIN_MAX_ATTEMPTS,
+    window=settings.LOGIN_LOCKOUT_SECONDS,
+    lockout=settings.LOGIN_LOCKOUT_SECONDS,
+)
+register_limiter = AttemptLimiter(
+    "register",
+    max_attempts=settings.REGISTER_MAX_ATTEMPTS,
+    window=settings.REGISTER_LOCKOUT_SECONDS,
+    lockout=settings.REGISTER_LOCKOUT_SECONDS,
+)
+
+
+def _login_identity(request, ident: str) -> str:
+    """Lockout key: one attacker IP cannot lock every account, and one account
+    cannot be hammered from a single IP without the IP being throttled too."""
+    return f"{client_ip(request)}:{(ident or '').lower()}"
+
+
+def _safe_next(request, candidate):
+    """Return ``candidate`` only if it is a safe same-host URL, else ``""``.
+
+    A plain ``startswith("/")`` check is not enough: ``//evil.com`` (and
+    ``/\\evil.com``) are protocol-relative URLs that browsers resolve as
+    absolute, which is what made ``/login/?next=//evil.com`` an open redirect
+    usable for phishing.
+    """
+    if not candidate:
+        return ""
+    if url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    logger.warning("Rejected unsafe redirect target: %r", candidate)
+    return ""
+
+
+def _post_login_redirect(request, user, next_url=""):
+    """Land staff on the owner dashboard, customers on the storefront — unless a
+    safe ``next`` target was supplied."""
+    target = _safe_next(request, next_url)
+    if target:
+        return redirect(target)
+    if user.is_staff:
+        return redirect("storefront:dashboard")
+    return redirect("storefront:home")
 
 
 def _nav(request):
@@ -221,8 +277,11 @@ def wishlist(request):
     return render(request, "storefront/page.html", ctx)
 
 
+@require_POST
 @login_required
 def wishlist_add(request, pk):
+    """Add to wishlist.  POST-only: as a GET it was a state change triggered by
+    any third-party page (and by link prefetchers/crawlers)."""
     wl, _ = Wishlist.objects.get_or_create(user=request.user)
     product = get_object_or_404(Product, pk=pk, is_active=True)
     _, created = WishlistItem.objects.get_or_create(wishlist=wl, product=product)
@@ -232,17 +291,20 @@ def wishlist_add(request, pk):
 
 def login_view(request):
     if request.user.is_authenticated:
-        nxt = request.GET.get("next")
-        if nxt and nxt.startswith("/"):
-            return redirect(nxt)
-        # Admins land on the owner dashboard, customers on the storefront.
-        if request.user.is_staff:
-            return redirect("storefront:dashboard")
-        return redirect("storefront:home")
+        return _post_login_redirect(request, request.user, request.GET.get("next"))
     ctx = {"next": request.GET.get("next", "") or request.POST.get("next", "")}
     ctx.update(_nav(request))
     if request.method == "POST":
         ident = (request.POST.get("username") or "").strip()
+        key = _login_identity(request, ident)
+        if login_limiter.is_locked(key):
+            logger.warning("Login blocked by lockout: %s", key)
+            messages.error(
+                request,
+                "Too many failed sign-in attempts for this account. Please wait "
+                f"{max(1, settings.LOGIN_LOCKOUT_SECONDS // 60)} minutes and try again.",
+            )
+            return render(request, "storefront/login.html", ctx, status=429)
         # Allow login with username OR email (professional UX).
         try:
             user_obj = User.objects.filter(username__iexact=ident).first() or User.objects.filter(email__iexact=ident).first()
@@ -251,18 +313,18 @@ def login_view(request):
             username = ident
         user = authenticate(request, username=username, password=request.POST.get("password"))
         if user is not None:
+            login_limiter.clear(key)
             login(request, user)
             if not request.POST.get("remember"):
                 request.session.set_expiry(0)
             _merge_session_cart(request)
             messages.success(request, f"Welcome back, {user.username}!")
-            nxt = request.POST.get("next")
-            if nxt and nxt.startswith("/"):
-                return redirect(nxt)
-            # Admins land on the owner dashboard, customers on the storefront.
-            if user.is_staff:
-                return redirect("storefront:dashboard")
-            return redirect("storefront:home")
+            return _post_login_redirect(request, user, request.POST.get("next"))
+        login_limiter.register_failure(key)
+        logger.warning(
+            "Failed login for %r from %s (%s/%s attempts)",
+            ident, client_ip(request), login_limiter.attempts(key), login_limiter.max_attempts,
+        )
         messages.error(request, "Invalid username/email or password. Please try again.")
     return render(request, "storefront/login.html", ctx)
 
@@ -276,29 +338,39 @@ def register_view(request):
         from django.contrib.auth.password_validation import validate_password
         from django.core.exceptions import ValidationError as DjangoValidationError
 
+        ip = client_ip(request)
+        if register_limiter.is_locked(ip):
+            logger.warning("Registration blocked by lockout: %s", ip)
+            messages.error(request, "Too many sign-up attempts from this network. Please try again later.")
+            return render(request, "storefront/register.html", ctx, status=429)
+
         username = request.POST.get("username", "").strip()
         email = request.POST.get("email", "").strip()
         password = request.POST.get("password", "")
         password2 = request.POST.get("password2", "")
+        error = ""
         if not username or not email or not password:
-            messages.error(request, "Username, email and password are required.")
+            error = "Username, email and password are required."
         elif password != password2:
-            messages.error(request, "Passwords do not match.")
+            error = "Passwords do not match."
         elif User.objects.filter(username__iexact=username).exists():
-            messages.error(request, "Username already taken. Try another one.")
+            error = "Username already taken. Try another one."
         elif User.objects.filter(email__iexact=email).exists():
-            messages.error(request, "Email already registered. Try signing in instead.")
+            error = "Email already registered. Try signing in instead."
         else:
             try:
                 validate_password(password)
             except DjangoValidationError as e:
-                messages.error(request, " ".join(e.messages))
-                return render(request, "storefront/register.html", ctx)
-            user = User.objects.create_user(username=username, email=email, password=password, role=User.Roles.CUSTOMER)
-            login(request, user)
-            _merge_session_cart(request)
-            messages.success(request, f"Account created. Welcome, {username}!")
-            return redirect("storefront:home")
+                error = " ".join(e.messages)
+            else:
+                user = User.objects.create_user(username=username, email=email, password=password, role=User.Roles.CUSTOMER)
+                login(request, user)
+                _merge_session_cart(request)
+                register_limiter.clear(ip)
+                messages.success(request, f"Account created. Welcome, {username}!")
+                return redirect("storefront:home")
+        register_limiter.register_failure(ip)
+        messages.error(request, error or "Could not create the account. Please try again.")
     return render(request, "storefront/register.html", ctx)
 
 
@@ -322,8 +394,14 @@ def cart_add(request, pk):
     available = (variant.stock_quantity if variant else product.stock_quantity) or 0
     if available <= 0:
         messages.error(request, f"{product.name} is out of stock.")
-        return redirect(request.META.get("HTTP_REFERER") or f"/product/{product.slug}/")
-    qty = min(qty, available)  # never hold more than exists in stock
+        # Never bounce to the raw Referer header — that is attacker-controlled
+        # (open redirect / phishing).  Always return to the product page.
+        return redirect("storefront:detail", slug=product.slug)
+    # Do NOT clamp qty to available here: the cart may hold more than is in
+    # stock so that checkout's oversell protection (place_order_from_cart ->
+    # InsufficientStock) is the single enforcement point.  Clamping here would
+    # silently rewrite the request and make the checkout stock check
+    # unreachable via the normal add-to-cart flow.
     if not request.user.is_authenticated:
         items = _session_cart(request)
         for entry in items:
@@ -636,9 +714,36 @@ def contact(request):
 # ---------------------------------------------------------------------------
 @csrf_exempt
 def esewa_callback(request):
+    """eSewa success/failure redirect: verify the signature, then confirm the order.
+
+    eSewa POSTs back ``transaction_uuid`` (the value *we* signed and sent, i.e.
+    ``order.order_number``), ``total_amount``, ``product_code`` and ``signature``.
+
+    The order must be resolved from that **signed** uuid and nothing else.  The
+    previous version looked the order up from the unsigned ``tid`` /
+    ``transaction_id`` parameter, so anyone who knew/obtained a genuine
+    transaction id could replay the same callback to mark a *different* order as
+    paid (free orders).  The signed uuid is bound to the order by the HMAC, and a
+    transaction id that has already settled one order is refused everywhere else.
+    """
     params = {**request.POST.dict(), **request.GET.dict()}
-    tid = params.get("transaction_id") or params.get("tid") or ""
-    order = Order.objects.filter(order_number=tid).first()
+    signed_uuid = (params.get("transaction_uuid") or "").strip()
+    tid = (params.get("transaction_id") or params.get("tid") or "").strip()
+
+    if not signed_uuid:
+        logger.warning("eSewa callback without transaction_uuid: %s", list(params))
+        messages.error(request, "eSewa callback was missing its transaction reference.")
+        return redirect("storefront:home")
+
+    if tid and tid != signed_uuid:
+        # Two different references in one callback: never trust either claim.
+        logger.error("eSewa callback uuid/tid mismatch: uuid=%s tid=%s", signed_uuid, tid)
+        messages.error(request, "eSewa payment could not be verified.")
+        return redirect("storefront:home")
+
+    # transaction_uuid is what we signed, i.e. the order number -> the signature
+    # check below is what actually authorises this order.
+    order = Order.objects.filter(order_number=signed_uuid).first()
     if order is None:
         messages.error(request, "eSewa callback referenced an unknown order.")
         return redirect("storefront:home")
@@ -663,17 +768,47 @@ def esewa_callback(request):
         )
 
     if result.ok:
-        with transaction.atomic():
-            order.payment_status = Order.PaymentStatus.VERIFIED
-            order.payment_reference = order.payment_reference or tid or order.order_number
-            if order.status == Order.Status.PENDING:
-                order.status = Order.Status.CONFIRMED
-                order.confirmed_at = timezone.now()
-            order.save(
-                update_fields=["payment_status", "payment_reference", "status", "confirmed_at", "updated_at"]
+        txn_id = (result.transaction_id or signed_uuid).strip()
+        replay = False
+        try:
+            with transaction.atomic():
+                # Lock the order so two concurrent callbacks cannot both confirm.
+                locked = Order.objects.select_for_update().get(pk=order.pk)
+                replay = (
+                    Order.objects.filter(gateway_txn_id=txn_id)
+                    .exclude(pk=locked.pk)
+                    .exists()
+                )
+                if not replay:
+                    locked.payment_status = Order.PaymentStatus.VERIFIED
+                    locked.gateway_txn_id = txn_id
+                    locked.payment_reference = locked.payment_reference or txn_id
+                    if locked.status == Order.Status.PENDING:
+                        locked.status = Order.Status.CONFIRMED
+                        locked.confirmed_at = timezone.now()
+                    locked.save(
+                        update_fields=[
+                            "payment_status", "gateway_txn_id", "payment_reference",
+                            "status", "confirmed_at", "updated_at",
+                        ]
+                    )
+        except IntegrityError:
+            # Unique constraint on gateway_txn_id: another callback won the race.
+            replay = True
+
+        if replay:
+            logger.error(
+                "eSewa transaction %s already settled another order; refusing %s",
+                txn_id, order.order_number,
             )
-        logger.info("eSewa payment verified for %s (tid=%s)", order.order_number, tid)
-        messages.success(request, f"Payment verified for {order.order_number} — order confirmed 🎉")
+            messages.error(
+                request,
+                "That eSewa transaction has already been used for another order. "
+                "Please contact us on WhatsApp if you believe this is wrong.",
+            )
+        else:
+            logger.info("eSewa payment verified for %s (txn=%s)", order.order_number, txn_id)
+            messages.success(request, f"Payment verified for {order.order_number} — order confirmed 🎉")
     else:
         logger.warning("eSewa callback rejected for %s: %s", order.order_number, result.error)
         messages.error(

@@ -51,8 +51,11 @@ urlpatterns = [
     path("", include("storefront.urls")),
 ]
 
-# Serve uploaded files (product images, payment screenshots) in development.
-# In production a web server (nginx/WhiteNoise-compatible storage) should do this.
+# Serve public uploads (product, category and seller images) in development.
+# Payment screenshots are NOT here: they live in PRIVATE_MEDIA_ROOT, outside
+# MEDIA_ROOT, and are streamed only by the authenticated views in storefront.
+# In production a web server should serve MEDIA_URL instead (and never expose
+# PRIVATE_MEDIA_ROOT).
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

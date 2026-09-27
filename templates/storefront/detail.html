@@ -295,9 +295,14 @@
     <div class="pdp-variants">
       <div class="pdp-variants-title">Select Variant</div>
       <div class="pdp-variant-options">
+        {# The base price is always a choice too, so a picked variant can be undone. #}
+        <label class="pdp-variant-btn {% if product.stock_quantity == 0 %}out{% endif %}">
+          <input type="radio" name="variant" value="" data-price="{{ product.price }}" {% if product.stock_quantity == 0 %}disabled{% endif %}>
+          Base price — {{ product.price|money }}
+        </label>
         {% for v in product.variants.all %}
           <label class="pdp-variant-btn {% if v.stock_quantity == 0 %}out{% endif %}">
-            <input type="radio" name="variant" value="{{ v.id }}" {% if forloop.first %}checked{% endif %} {% if v.stock_quantity == 0 %}disabled{% endif %}>
+            <input type="radio" name="variant" value="{{ v.id }}" data-price="{{ v.price }}" {% if v.stock_quantity == 0 %}disabled{% endif %}>
             {{ v.name }} — {{ v.price|money }}
           </label>
         {% endfor %}
@@ -317,7 +322,7 @@
     <form action="/cart/add/{{ product.id }}/" method="post" class="mobile-hide" style="display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;align-items:center">
       {% csrf_token %}
       {% if product.variants.all %}
-        <select name="variant" style="display:none" id="desktopVariant">
+        <select name="variant" style="display:none" id="desktopVariant"><option value=""></option>
           {% for v in product.variants.all %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
         </select>
       {% endif %}
@@ -329,7 +334,8 @@
       <span id="desktopTotal" style="font-size:16px;font-weight:700;color:var(--text);margin-left:8px" data-price="{{ product.price }}">{{ product.price|money }}</span>
       <button class="btn" style="background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700" type="submit">🛒 Add to Cart</button>
       <button class="btn" type="button" id="desktopBuyNow" style="background:linear-gradient(135deg,#f59e0b,#e08c00);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;box-shadow:0 10px 24px -10px rgba(245,158,11,.9)">⚡ Buy Now</button>
-      <a class="btn" href="/wishlist/add/{{ product.id }}/" style="border:1px solid var(--border);padding:12px 20px;border-radius:10px">♡ Wishlist</a>
+      {# Wishlist is state-changing, so it posts (with CSRF) instead of using a GET link. #}
+      <button class="btn" type="submit" formaction="/wishlist/add/{{ product.id }}/" formmethod="post" style="border:1px solid var(--border);padding:12px 20px;border-radius:10px;cursor:pointer">♡ Wishlist</button>
     </form>
 
     {% if not user.is_authenticated %}
@@ -407,7 +413,7 @@
     <form id="mobileCartForm" action="/cart/add/{{ product.id }}/" method="post" style="display:flex;flex:1;gap:8px">
       {% csrf_token %}
       {% if product.variants.all %}
-        <select name="variant" style="display:none" id="mobileVariant">
+        <select name="variant" style="display:none" id="mobileVariant"><option value=""></option>
           {% for v in product.variants.all %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
         </select>
       {% endif %}
@@ -441,6 +447,8 @@ document.querySelectorAll('.pdp-variant-btn input').forEach(function(input) {
     var mobileSel = document.getElementById('mobileVariant');
     if (desktopSel) desktopSel.value = val;
     if (mobileSel) mobileSel.value = val;
+    // Record the selection so displayPrice = selectedVariant ? selectedVariant.price : productPrice
+    selectVariant(this);
   });
 });
 
@@ -478,9 +486,7 @@ if (dBuyBtn) {
   });
 }
 
-// Initialize first variant as active
-var firstBtn = document.querySelector('.pdp-variant-btn');
-if (firstBtn) firstBtn.classList.add('active');
+// No variant is selected on load, so no button is highlighted and the base price stays.
 
 // Quantity Selector
 function changeQty(delta) {
@@ -496,7 +502,7 @@ function changeQty(delta) {
   updateTotalPrice(val);
 }
 
-function formatRs(n){try{return 'Rs '+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}catch(e){return 'Rs '+n;}}
+function formatRs(n){try{return 'Rs '+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}catch(e){return 'Rs '+n;}}
 function updateTotalPrice(qty) {
   var bar = document.querySelector('.pdp-sticky-bar');
   var unitPrice = parseFloat(bar.getAttribute('data-unit-price'));
@@ -505,7 +511,8 @@ function updateTotalPrice(qty) {
 }
 
 // Desktop Quantity Selector
-var unitPrice = {{ product.price }};
+var productPrice = {{ product.price }}; // base price from the DB — never a variant price
+var unitPrice = productPrice;
 function changeDesktopQty(delta) {
   var input = document.getElementById('desktopQty');
   var val = parseInt(input.value) + delta;
@@ -513,5 +520,50 @@ function changeDesktopQty(delta) {
   input.value = val;
   document.getElementById('desktopTotal').textContent = formatRs(unitPrice * val);
 }
+
+// ---- Variant pricing --------------------------------------------------------
+// displayPrice = selectedVariant ? selectedVariant.price : productPrice
+// selectedVariant stays null until the customer clicks a variant, so the
+// server-rendered BASE product price is never overwritten on page load.
+var selectedVariant = null;
+
+function currentUnitPrice() {
+  return selectedVariant ? selectedVariant.price : productPrice;
+}
+
+function renderPrice() {
+  var price = currentUnitPrice();
+  unitPrice = price; // keeps changeDesktopQty() in sync
+  var mainPrice = document.querySelector('.pdp-price');
+  if (mainPrice) mainPrice.textContent = formatRs(price);
+  var dTotal = document.getElementById('desktopTotal');
+  if (dTotal) {
+    dTotal.setAttribute('data-price', price);
+    var dq = document.getElementById('desktopQty');
+    var dQty = dq ? (parseInt(dq.value, 10) || 1) : 1;
+    dTotal.textContent = formatRs(price * dQty);
+  }
+  var bar = document.querySelector('.pdp-sticky-bar');
+  if (bar) {
+    bar.setAttribute('data-unit-price', price);
+    var mq = document.getElementById('mobileQty');
+    var mQty = mq ? (parseInt(mq.value, 10) || 1) : 1;
+    updateTotalPrice(mQty);
+  }
+}
+
+function selectVariant(input) {
+  if (!input) return;
+  var price = parseFloat(input.getAttribute('data-price'));
+  selectedVariant = isNaN(price) ? null : { id: input.value, price: price };
+  document.querySelectorAll('.pdp-variant-btn').forEach(function (b) { b.classList.remove('active'); });
+  if (input.parentElement) input.parentElement.classList.add('active');
+  renderPrice();
+}
+
+// Initial state: nothing selected, so the base price rendered by the server is left untouched.
+var preSelected = document.querySelector('.pdp-variant-btn input:checked');
+if (preSelected) selectVariant(preSelected);
+
 </script>
 {% endblock %}

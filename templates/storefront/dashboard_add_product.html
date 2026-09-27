@@ -29,6 +29,24 @@
         </div>
         <div class='ap-field'><label for='ap-price'>Price (Rs) <span>*</span></label><input id='ap-price' name='price' type='number' step='0.01' min='0' placeholder='999' value='{{ form_values.price }}'></div>
         <div class='ap-field'><label for='ap-stock'>Stock quantity</label><input id='ap-stock' name='stock' type='number' step='1' min='0' placeholder='0' value='{{ form_values.stock }}'><span class='ap-hint'>Units in stock. Leave empty for 0.</span></div>
+        <div class='ap-field full'>
+          <label>Variants (optional)</label>
+          <span class='ap-hint'>Sell the same product at different prices or quantities — e.g. Small, Medium, Large. Price and quantity are needed for every variant. Leave this empty to sell at the base price only.</span>
+          <div id='ap-variants'>
+            {% for row in variant_rows %}
+            <div class='ap-variant-row'>
+              <input name='variant_name' type='text' maxlength='255' placeholder='Variant name (e.g. Large)' value='{{ row.name }}'>
+              <input name='variant_price' type='number' step='0.01' min='0' placeholder='Price (Rs)' value='{{ row.price }}'>
+              <input name='variant_stock' type='number' step='1' min='0' placeholder='Qty' value='{{ row.stock }}'>
+              <button type='button' class='btn btn-secondary btn-sm ap-variant-del' title='Remove this variant'>✕</button>
+            </div>
+            {% endfor %}
+          </div>
+          <div style='display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px'>
+            <button type='button' class='btn btn-secondary btn-sm' id='ap-variant-add'>➕ Add variant</button>
+            <span class='ap-hint'>The base price above always stays available, so customers can pick it too.</span>
+          </div>
+        </div>
         <div class='ap-field full'><label for='ap-desc'>Short description</label><textarea id='ap-desc' name='description' rows='2' maxlength='500' placeholder='Shown under the product name in the shop'>{{ form_values.description }}</textarea></div>
         <div class='ap-field'><label for='ap-img'>Product photos (optional)</label><input id='ap-img' name='images' type='file' accept='image/jpeg,image/png,image/webp' multiple><span class='ap-hint'>Select up to 8 JPG, PNG or WebP photos. The first is the cover photo; max 5 MB each.</span></div>
       </div>
@@ -40,4 +58,33 @@
   </div>
 </section>
 {% include 'storefront/_dash_footer.html' %}
+
+<script>
+// Add / remove variant rows — the form posts plain repeated inputs, so it works
+// even when JavaScript is unavailable (the first empty row is always rendered).
+(function () {
+  var wrap = document.getElementById('ap-variants');
+  var addBtn = document.getElementById('ap-variant-add');
+  if (!wrap || !addBtn) return;
+
+  var ROW_HTML =
+    "<input name='variant_name' type='text' maxlength='255' placeholder='Variant name (e.g. Large)'>" +
+    "<input name='variant_price' type='number' step='0.01' min='0' placeholder='Price (Rs)'>" +
+    "<input name='variant_stock' type='number' step='1' min='0' placeholder='Qty'>" +
+    "<button type='button' class='btn btn-secondary btn-sm ap-variant-del' title='Remove this variant'>✕</button>";
+
+  addBtn.addEventListener('click', function () {
+    var row = document.createElement('div');
+    row.className = 'ap-variant-row';
+    row.innerHTML = ROW_HTML;
+    wrap.appendChild(row);
+    row.querySelector('input').focus();
+  });
+
+  wrap.addEventListener('click', function (event) {
+    var btn = event.target.closest ? event.target.closest('.ap-variant-del') : null;
+    if (btn) btn.parentElement.remove();
+  });
+})();
+</script>
 {% endblock %}

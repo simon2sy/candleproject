@@ -1,9 +1,16 @@
 """API v1 router: /api/v1/..."""
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
-from accounts.views import AddressViewSet, MeView, RegisterView, SellerProfileViewSet
+from accounts.views import (
+    AddressViewSet,
+    LoginView,
+    LogoutView,
+    MeView,
+    RegisterView,
+    SellerProfileViewSet,
+)
 from catalog.views import CategoryViewSet, ProductVariantViewSet, ProductViewSet
 from orders.views import CartViewSet, OrderViewSet, WishlistViewSet
 
@@ -19,7 +26,8 @@ router.register(r"orders", OrderViewSet, basename="order")
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
-    path("auth/login/", TokenObtainPairView.as_view(), name="auth-login"),
+    path("auth/login/", LoginView.as_view(), name="auth-login"),
+    path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", MeView.as_view(), name="auth-me"),
     path("", include(router.urls)),

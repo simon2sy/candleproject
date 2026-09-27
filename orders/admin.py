@@ -38,13 +38,13 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("order_number", "customer", "status", "payment_method", "payment_status", "total", "province", "district", "created_at")
     list_filter = ("status", "payment_method", "payment_status", "province", "created_at")
     search_fields = ("order_number", "customer__username", "customer__email", "phone", "full_name")
-    readonly_fields = ("created_at", "updated_at", "subtotal", "total", "confirmed_at", "confirmed_by")
+    readonly_fields = ("created_at", "updated_at", "subtotal", "total", "gateway_txn_id", "confirmed_at", "confirmed_by")
     autocomplete_fields = ("customer",)
     inlines = [OrderItemInline]
     fieldsets = (
         ("Order", {"fields": ("order_number", "customer", "status", "subtotal", "shipping_cost", "discount", "total")}),
         ("Delivery (Nepal)", {"fields": ("full_name", "phone", "province", "district", "city", "address_line", "landmark", "shipping_address")}),
-        ("Payment", {"fields": ("payment_method", "payment_status", "payment_reference", "payment_screenshot", "whatsapp_number", "confirmed_at", "confirmed_by")}),
+        ("Payment", {"fields": ("payment_method", "payment_status", "payment_reference", "gateway_txn_id", "payment_screenshot", "whatsapp_number", "confirmed_at", "confirmed_by")}),
     )
 
 

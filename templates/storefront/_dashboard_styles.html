@@ -105,6 +105,17 @@
 .stock-count.critical{color:var(--danger)}
 .stock-count.low{color:var(--warning)}
 
+/* Variants (product list) */
+.variant-list{display:flex;flex-direction:column;gap:4px}
+.variant-chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;white-space:nowrap;width:fit-content}
+.variant-chip .vname{font-weight:600;color:var(--text)}
+.variant-chip .vprice{color:var(--text-muted)}
+.variant-chip .vstock{font-weight:700}
+.variant-chip .vstock.critical{color:var(--danger)}
+.variant-chip .vstock.low{color:var(--warning)}
+.variant-chip.off{opacity:.55}
+.variant-note{font-size:12px;color:var(--text-muted);font-style:italic}
+
 /* Empty State */
 .empty-state{padding:40px 20px;text-align:center}
 .empty-state p{color:var(--text-muted);font-size:14px}
@@ -127,6 +138,11 @@
 .ap-field input,.ap-field select,.ap-field textarea{padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);background:#fff;width:100%;box-sizing:border-box}
 .ap-field input:focus,.ap-field select:focus,.ap-field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
 .ap-hint{font-size:12px;color:var(--text-muted)}
+.ap-variant-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+.ap-variant-row .btn{white-space:nowrap;padding:10px 14px}
+.ap-variant-row input::placeholder{color:#94a3b8}
+/* One variant row per line on phones: name, then price + qty side by side. */
+@media(max-width:768px){.ap-variant-row{grid-template-columns:1fr 1fr;gap:6px}.ap-variant-row input:first-child{grid-column:1/-1}.ap-variant-row .ap-variant-del{justify-self:end}}
 .form-errors{background:var(--danger-light);border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 14px;margin-bottom:14px}
 .form-errors p{margin:2px 0;font-size:13px;font-weight:600}
 @media(max-width:768px){.ap-form{padding:16px}.ap-grid{grid-template-columns:1fr}}

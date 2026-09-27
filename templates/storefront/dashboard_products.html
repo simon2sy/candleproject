@@ -22,7 +22,7 @@
   <div class='table-card'>
     <div class='table-scroll'>
       <table class='modern-table'>
-        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Variants</th><th>Status</th></tr></thead>
         <tbody>
           {% for p in all_products %}
           <tr>
@@ -30,10 +30,25 @@
             <td>{{ p.category.name|default:'—' }}</td>
             <td><span style='font-weight:600'>{{ p.price|money }}</span></td>
             <td><div class='stock-bar'><div class='stock-track'><div class='stock-fill {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% else %}ok{% endif %}' style='width:{% widthratio p.stock_quantity 20 100 %}%'></div></div><span class='stock-count {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% endif %}'>{{ p.stock_quantity }}</span></div></td>
+            <td>
+              {% if p.variants.all %}
+              <div class='variant-list'>
+                {% for v in p.variants.all %}
+                <span class='variant-chip {% if not v.is_active %}off{% endif %}'>
+                  <span class='vname'>{{ v.name }}</span>
+                  <span class='vprice'>{{ v.price|money }}</span>
+                  <span class='vstock {% if v.stock_quantity <= 2 %}critical{% elif v.stock_quantity <= 5 %}low{% endif %}'>{{ v.stock_quantity }} left</span>
+                </span>
+                {% endfor %}
+              </div>
+              {% else %}
+              <span class='variant-note'>Base price only</span>
+              {% endif %}
+            </td>
             <td><span class='status-badge {% if p.is_active %}status-confirmed{% else %}status-cancelled{% endif %}'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></td>
           </tr>
           {% empty %}
-          <tr><td colspan='5'><div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div></td></tr>
+          <tr><td colspan='6'><div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div></td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -51,6 +66,7 @@
           <div class='mobile-order-item'><span class='label'>Category</span><span class='value'>{{ p.category.name|default:'—' }}</span></div>
           <div class='mobile-order-item'><span class='label'>Price</span><span class='value'>{{ p.price|money }}</span></div>
           <div class='mobile-order-item'><span class='label'>Stock</span><span class='value'>{{ p.stock_quantity }} left</span></div>
+          <div class='mobile-order-item' style='align-items:flex-start'><span class='label'>Variants</span><span class='value'>{% for v in p.variants.all %}{{ v.name }} — {{ v.price|money }} · {{ v.stock_quantity }} left{% if not forloop.last %}<br>{% endif %}{% empty %}Base price only{% endfor %}</span></div>
           <div class='mobile-order-item'><span class='label'>Status</span><span class='value'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></div>
         </div>
         <div style='margin-top:10px'>

@@ -40,7 +40,10 @@ class Tag(models.Model):
 
 
 class Product(models.Model):
-    seller = models.ForeignKey("accounts.SellerProfile", on_delete=models.CASCADE, related_name="products")
+    # PROTECT, never CASCADE: deleting a seller profile must not silently wipe
+    # the catalogue.  Products have to be removed (or re-assigned) explicitly
+    # before their seller profile can go.
+    seller = models.ForeignKey("accounts.SellerProfile", on_delete=models.PROTECT, related_name="products")
     category = models.ForeignKey("catalog.Category", on_delete=models.PROTECT, related_name="products")
     tags = models.ManyToManyField("catalog.Tag", blank=True, related_name="products")
     name = models.CharField(max_length=255, db_index=True)

@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from config.storage import private_media_storage
 from orders.validators import validate_payment_screenshot
 
 
@@ -133,8 +134,17 @@ class Order(models.Model):
         max_length=12, choices=PaymentStatus.choices, default=PaymentStatus.PENDING, db_index=True
     )
     payment_reference = models.CharField(max_length=100, blank=True)
+    # Transaction id returned by the online gateway.  Unique (NULL for manual
+    # payments) so one gateway transaction can never settle two orders.
+    gateway_txn_id = models.CharField(max_length=64, null=True, blank=True, unique=True, default=None)
     payment_screenshot = models.ImageField(
-        upload_to="payment_screenshots/", blank=True, null=True, validators=[validate_payment_screenshot]
+        # Private storage: screenshots live outside MEDIA_ROOT and are only
+        # streamed by the authenticated view (see config.storage).
+        storage=private_media_storage,
+        upload_to="payment_screenshots/",
+        blank=True,
+        null=True,
+        validators=[validate_payment_screenshot],
     )
     whatsapp_number = models.CharField(max_length=20, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)

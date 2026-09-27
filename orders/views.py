@@ -50,6 +50,12 @@ class OrderViewSet(viewsets.ModelViewSet):
     filterset_fields = ("status",)
     search_fields = ("order_number",)
     ordering = ("-created_at",)
+    # Customers may list/read their own orders and POST to check out from their
+    # cart.  PATCH/PUT/DELETE are deliberately not exposed: they let any
+    # customer rewrite their own discount/shipping_cost (paying whatever they
+    # liked) and delete orders, destroying the audit trail.  Status, payment and
+    # financial edits belong to the owner dashboard / Django admin.
+    http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
         user = self.request.user
@@ -88,19 +94,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             raise ValidationError(str(exc))
 
         serializer.instance = order
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        is_admin = user.is_staff or user.is_superuser or getattr(user, "role", "") == "ADMIN"
-        if not is_admin and serializer.instance.customer != user:
-            from rest_framework.exceptions import PermissionDenied
-
-            raise PermissionDenied("You cannot modify another customer's order.")
-        if not is_admin:
-            # Customers may not change status in Phase 1.
-            serializer.save(status=serializer.instance.status)
-        else:
-            serializer.save()
 
 
 class CartViewSet(viewsets.GenericViewSet):

@@ -95,6 +95,21 @@ else:
         )
     ALLOWED_HOSTS = sorted(_hosts)
 
+
+# --- Environment guard --------------------------------------------------------
+# Declare the deployment environment explicitly (ENVIRONMENT=production on the
+# server).  Booting production with DEBUG=True silently drops SECURE_SSL_REDIRECT,
+# HSTS and the secure cookie flags, and exposes tracebacks with settings values —
+# refuse to start instead of degrading quietly.
+ENVIRONMENT = os.getenv("ENVIRONMENT", "").strip().lower() or ("development" if DEBUG else "production")
+if ENVIRONMENT not in ("development", "production"):
+    raise ImproperlyConfigured("ENVIRONMENT must be 'development' or 'production'.")
+if ENVIRONMENT == "production" and DEBUG:
+    raise RuntimeError(
+        "ENVIRONMENT=production with DEBUG=True is refused: set DEBUG=False "
+        "(plus SECRET_KEY, DATABASE_URL and ALLOWED_HOSTS) before serving traffic."
+    )
+
 INSTALLED_APPS = [
 "django.contrib.admin",
 "django.contrib.auth",
@@ -106,6 +121,10 @@ INSTALLED_APPS = [
 "django.contrib.sitemaps",
 # Third-party
 "rest_framework",
+# Refresh-token rotation/blacklist support (see SIMPLE_JWT below): a stolen
+# refresh token dies as soon as the legitimate client rotates it.
+# Requires `manage.py migrate` (ships its own migrations).
+"rest_framework_simplejwt.token_blacklist",
 "django_filters",
 "corsheaders",
     # WhiteNoise must come after staticfiles (and as early as possible in middleware).
@@ -171,6 +190,21 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# --- Private media: payment screenshots ---------------------------------------
+# Customer payment screenshots must never be reachable through MEDIA_URL.
+# They live in their own root (outside MEDIA_ROOT/STATIC_ROOT) and are streamed
+# only by the authenticated views in ``storefront``.
+PRIVATE_MEDIA_ROOT = Path(os.getenv("PRIVATE_MEDIA_ROOT") or (BASE_DIR / "private_media"))
+# Never routed by any URL pattern: it exists so file-field widgets keep working.
+PRIVATE_MEDIA_URL = "/private-media/"
+
+for _exposed_root, _label in ((MEDIA_ROOT, "MEDIA_ROOT"), (STATIC_ROOT, "STATIC_ROOT")):
+    if PRIVATE_MEDIA_ROOT == _exposed_root or _exposed_root in PRIVATE_MEDIA_ROOT.parents:
+        raise ImproperlyConfigured(
+            f"PRIVATE_MEDIA_ROOT must live outside {_label}, otherwise payment "
+            "screenshots become publicly downloadable."
+        )
+
 # WhiteNoise: serve static files from the WSGI layer without a separate web server.
 STORAGES = {
     "default": {
@@ -215,7 +249,10 @@ else:
 
 # Trust proxy headers only when the deployment is behind a trusted HTTPS proxy.
 # Do not enable this when Django is directly reachable from the public internet.
-if os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("1", "true", "yes"):
+# Also decides whether rate limiting may believe X-Forwarded-For (see
+# config.ratelimit.client_ip) — otherwise attackers rotate the header.
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("1", "true", "yes")
+if TRUST_PROXY_HEADERS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CSRF trusted origins: env override + every allowed host + Cloudflare
@@ -253,6 +290,25 @@ PAYMENT_ACCOUNTS = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Cache + HTML-form rate limiting ------------------------------------------
+# Used by DRF throttling and by config.ratelimit (the template login / register
+# forms).  The default local-memory cache counts per process: with several
+# gunicorn workers each worker keeps its own counters, so point CACHE_BACKEND at
+# a shared cache (Redis/Memcached) in production.
+CACHES = {
+    "default": {
+        "BACKEND": os.getenv("CACHE_BACKEND", "django.core.cache.backends.locmem.LocMemCache"),
+        "LOCATION": os.getenv("CACHE_LOCATION", "candle-throttle"),
+    }
+}
+
+# Failed HTML logins allowed per IP+username before the identity is locked out.
+LOGIN_MAX_ATTEMPTS = int(os.getenv("LOGIN_MAX_ATTEMPTS", "5"))
+LOGIN_LOCKOUT_SECONDS = int(os.getenv("LOGIN_LOCKOUT_SECONDS", "900"))
+# HTML registration attempts allowed per IP.
+REGISTER_MAX_ATTEMPTS = int(os.getenv("REGISTER_MAX_ATTEMPTS", "10"))
+REGISTER_LOCKOUT_SECONDS = int(os.getenv("REGISTER_LOCKOUT_SECONDS", "3600"))
+
 # --- DRF ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -283,9 +339,15 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-"ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-"REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-"AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", "30"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS", "7"))),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    # Rotate refresh tokens and blacklist the used one, so a leaked refresh
+    # token stops working as soon as the real client refreshes.  Needs the
+    # token_blacklist app in INSTALLED_APPS and `manage.py migrate`.
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # --- CORS (open for local React dev; tighten in production) ---

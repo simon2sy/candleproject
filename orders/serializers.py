@@ -67,8 +67,13 @@ class OrderSerializer(serializers.ModelSerializer):
             "full_name", "phone", "province", "district", "city", "address_line", "landmark",
             "payment_method", "payment_status", "payment_reference",
         )
+        # Everything money- or status-related is server-owned: a customer must
+        # never be able to send a discount, shipping cost or status through the
+        # API (OrderViewSet only exposes list/retrieve/create anyway — this is
+        # the second line of defence if that ever changes).
         read_only_fields = (
-            "id", "order_number", "subtotal", "total", "created_at", "updated_at",
+            "id", "order_number", "status", "subtotal", "shipping_cost", "discount",
+            "total", "created_at", "updated_at",
             "full_name", "phone", "province", "district", "city", "address_line", "landmark",
             "payment_method", "payment_status", "payment_reference",
         )

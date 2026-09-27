@@ -697,3 +697,9 @@ h1,h2,h3,h4{letter-spacing:-.02em;line-height:1.15}
   .card .price{font-size:16px}
   .mobilebar a{font-size:10px}
 }
+
+/* ---- Wishlist is a POST form now (state change + CSRF), so the fab needs the
+   button reset: it keeps the .wish-fab look but loses the UA button chrome. ---- */
+.card-media form.wish-form{margin:0;padding:0}
+.card-media button.wish-fab{font:inherit;font-size:14px;padding:0;cursor:pointer}
+

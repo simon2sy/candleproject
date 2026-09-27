@@ -10,7 +10,7 @@ from django.db import models, transaction
 from django.db.models import Count, Q, Sum
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.text import slugify
@@ -120,12 +120,87 @@ def _home_context(request):
     return ctx
 
 
+def _blank_variant_row():
+    """One empty variant row, so the form always shows a place to type."""
+    return {"name": "", "price": "", "stock": ""}
+
+
+def _parse_variant_rows(request):
+    """Read the repeated variant rows (name / price / quantity) from POST.
+
+    Returns ``(rows, errors, parsed)``: ``rows`` keeps the raw typed values so
+    the form can be re-rendered after an error, ``errors`` holds one plain
+    message per problem (numbered like the rows the seller sees) and ``parsed``
+    holds the ready-to-save variants (``Decimal`` price, ``int`` quantity).
+    Untouched rows are skipped, so the empty row the form always renders is
+    harmless.
+    """
+    names = request.POST.getlist("variant_name")
+    prices = request.POST.getlist("variant_price")
+    stocks = request.POST.getlist("variant_stock")
+    rows, errors, parsed, seen = [], [], [], set()
+
+    for index in range(max(len(names), len(prices), len(stocks))):
+        raw = {
+            "name": (names[index] if index < len(names) else "").strip(),
+            "price": (prices[index] if index < len(prices) else "").strip(),
+            "stock": (stocks[index] if index < len(stocks) else "").strip(),
+        }
+        if not any(raw.values()):
+            continue
+        label = f"Variant {index + 1}"
+        rows.append(dict(raw))
+
+        name = raw["name"]
+        if not name:
+            errors.append(f"{label}: enter a variant name.")
+        elif len(name) > 255:
+            errors.append(f"{label}: name is too long (255 characters max).")
+        elif name.lower() in seen:
+            errors.append(f"{label}: “{name}” is already used — give every variant its own name.")
+        else:
+            seen.add(name.lower())
+
+        price = None
+        if not raw["price"]:
+            errors.append(f"{label}: enter a price.")
+        else:
+            try:
+                price = Decimal(raw["price"])
+                if price < 0 or price.as_tuple().exponent < -2:
+                    raise ValueError
+            except Exception:
+                errors.append(f"{label}: price must be a number like 999 or 999.50.")
+                price = None
+            else:
+                # DecimalField(max_digits=10, decimal_places=2) can hold no more.
+                if price >= Decimal("100000000"):
+                    errors.append(f"{label}: price is too large.")
+                    price = None
+
+        stock = 0
+        if raw["stock"]:
+            try:
+                stock = int(raw["stock"])
+                if stock < 0:
+                    raise ValueError
+            except ValueError:
+                errors.append(f"{label}: quantity must be a whole number of units (0 or more).")
+                stock = 0
+
+        if name and price is not None:
+            parsed.append({"name": name, "price": price, "stock": stock})
+
+    return rows, errors, parsed
+
+
 def _add_product_page(request, errors=None, values=None):
     """Render the standalone add-product page (keeps typed values on errors)."""
     ctx = {
         "categories": Category.objects.filter(is_active=True).order_by("name"),
         "form_errors": errors or [],
         "form_values": values or {},
+        "variant_rows": (values or {}).get("variants") or [_blank_variant_row()],
     }
     ctx.update(_nav(request))
     return render(request, "storefront/dashboard_add_product.html", ctx)
@@ -207,6 +282,10 @@ def _add_product(request):
             continue
         valid_images.append(image)
 
+    variant_rows, variant_errors, variants = _parse_variant_rows(request)
+    values["variants"] = variant_rows
+    errors.extend(variant_errors)
+
     if errors:
         return _add_product_page(request, errors, values)
 
@@ -241,8 +320,24 @@ def _add_product(request):
                 is_primary=order == 0,
                 display_order=order,
             )
+        for index, variant in enumerate(variants, start=1):
+            ProductVariant.objects.create(
+                product=product,
+                name=variant["name"],
+                sku=f"{sku}-V{index:02d}",
+                price=variant["price"],
+                stock_quantity=variant["stock"],
+                is_active=True,
+            )
 
-    messages.success(request, f"“{name}” was added to your shop.")
+    if variants:
+        messages.success(
+            request,
+            f"“{name}” was added to your shop with {len(variants)} variant"
+            f"{'s' if len(variants) > 1 else ''}."
+        )
+    else:
+        messages.success(request, f"“{name}” was added to your shop.")
     return redirect("storefront:dashboard-products")
 
 
@@ -272,7 +367,11 @@ def dashboard_add_product(request):
 def dashboard_products(request):
     """All products with stock — lowest stock listed first."""
     ctx = {
-        "all_products": Product.objects.select_related("category").order_by("stock_quantity", "name"),
+        "all_products": (
+            Product.objects.select_related("category")
+            .prefetch_related("variants")
+            .order_by("stock_quantity", "name")
+        ),
         "low_stock": Product.objects.filter(stock_quantity__lte=5).order_by("stock_quantity"),
         "product_count": Product.objects.filter(is_active=True).count(),
     }
@@ -351,6 +450,23 @@ def dashboard_report(request):
     return render(request, "storefront/dashboard_report.html", ctx)
 
 
+def _csv_cell(value):
+    """Return ``value`` as a spreadsheet-safe cell.
+
+    Excel/Sheets execute a cell that starts with ``=``, ``+``, ``-``, ``@``, TAB
+    or CR, so a customer named ``=cmd|'/c calc'!A1`` (or a crafted province)
+    became a formula the moment staff opened the export.  Neutralise those by
+    prefixing an apostrophe — except for plain numbers, which must stay numeric.
+    """
+    text = "" if value is None else str(value)
+    if text[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        try:
+            float(text)
+        except ValueError:
+            return "'" + text
+    return text
+
+
 @staff_member_required
 def dashboard_orders(request):
     qs = _filtered_orders(request)
@@ -361,8 +477,9 @@ def dashboard_orders(request):
         w.writerow(["Order", "Date", "Customer", "Phone", "Province", "District", "City",
                     "Payment", "PayStatus", "Status", "Subtotal", "Shipping", "Total"])
         for o in qs:
-            w.writerow([o.order_number, o.created_at, o.customer.username, o.phone, o.province,
-                        o.district, o.city, o.payment_method, o.payment_status, o.status,
+            w.writerow([_csv_cell(o.order_number), _csv_cell(o.created_at), _csv_cell(o.customer.username),
+                        _csv_cell(o.phone), _csv_cell(o.province), _csv_cell(o.district), _csv_cell(o.city),
+                        _csv_cell(o.payment_method), _csv_cell(o.payment_status), _csv_cell(o.status),
                         o.subtotal, o.shipping_cost, o.total])
         return response
     page = Paginator(qs, 25).get_page(request.GET.get("page"))
