@@ -96,6 +96,12 @@ else:
     ALLOWED_HOSTS = sorted(_hosts)
 
 
+# --- Canonical SEO domain (never testserver/dev in production output). ---
+# Preferred public host used for <link rel=canonical>, Open Graph URLs,
+# sitemap locations and JSON-LD. Defaults to the production domain.
+SEO_CANONICAL_DOMAIN = os.getenv("SEO_CANONICAL_DOMAIN", "nismitacraftstudio.com").strip().lower() or "nismitacraftstudio.com"
+SEO_SITE_URL = os.getenv("SEO_SITE_URL", f"https://{SEO_CANONICAL_DOMAIN}").strip().rstrip("/") or f"https://{SEO_CANONICAL_DOMAIN}"
+
 # --- Environment guard --------------------------------------------------------
 # Declare the deployment environment explicitly (ENVIRONMENT=production on the
 # server).  Booting production with DEBUG=True silently drops SECURE_SSL_REDIRECT,
@@ -160,6 +166,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "storefront.context_processors.seo",
             ],
         },
     },

@@ -1,44 +1,19 @@
-{% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load storefront_tags %}
-{% block seo_title %}{{ product.name }} Candle & Soap Making Material in Nepal | Nismita Craft Studio{% endblock %}
-{% block seo_description %}{% with img=product.primary_image %}{{ product.short_description|default:product.description|striptags|truncatechars:150 }}{% endwith %}{% if not product.short_description and not product.description %}Buy {{ product.name }} for candle making or cold process soap making in Nepal. Quality materials, Rs 150 delivery and confirmed dispatch.{% endif %}{% endblock %}
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load storefront_tags %}{% load seo_tags %}
+{% block title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block seo_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block meta_description %}{{ product_seo_description }}{% endblock %}
+{% block seo_description %}{{ product_seo_description }}{% endblock %}
 {% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block og_description %}{{ product_seo_description }}{% endblock %}
+{% block twitter_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block twitter_description %}{{ product_seo_description }}{% endblock %}
 {% with seo_img=product.primary_image %}
-  {% block og_image %}<meta property="og:image" content="{% if seo_img %}{{ request.scheme }}://{{ request.get_host }}{{ seo_img.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/product-placeholder.svg' %}{% endif %}">{% endblock %}
-  {% block twitter_image %}<meta name="twitter:image" content="{% if seo_img %}{{ request.scheme }}://{{ request.get_host }}{{ seo_img.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/product-placeholder.svg' %}{% endif %}">{% endblock %}
+  {% block og_image %}<meta property="og:image" content="{% if seo_img and seo_img.image %}{{ product_seo_image_url }}{% else %}{{ og_image_default }}{% endif %}">{% endblock %}
+  {% block twitter_image %}<meta name="twitter:image" content="{% if seo_img and seo_img.image %}{{ product_seo_image_url }}{% else %}{{ og_image_default }}{% endif %}">{% endblock %}
 {% endwith %}
 {% block structured_data %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": "{{ product.name }}",
-  "description": "{{ product.short_description|default:product.description|truncatechars:5000 }}",
-  "sku": "{{ product.sku }}",
-  "category": "{{ product.category.name }}",
-  "brand": {"@type": "Brand", "name": "Nismita Craft Studio"},
-  "url": "{{ request.build_absolute_uri }}",
-  "image": ["{{ request.scheme }}://{{ request.get_host }}{{ product.primary_image.image.url }}" if product.primary_image and product.primary_image.image else ""],
-  "offers": {
-    "@type": "Offer",
-    "url": "{{ request.build_absolute_uri }}",
-    "priceCurrency": "NPR",
-    "price": "{{ product.price }}",
-    "availability": "{% if product.stock_quantity > 0 and product.is_available %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-    "itemCondition": "https://schema.org/NewCondition",
-    "seller": {"@type": "Organization", "name": "Nismita Craft Studio"}
-  },
-  "review": {
-    "@type": "Review",
-    "reviewRating": {
-      "@type": "Rating",
-      "ratingValue": 4.0,
-      "bestRating": 5,
-      "worstRating": 1
-    },
-    "author": "{{ product.seller.business_name }}"
-  }
-}
-</script>
+<script type="application/ld+json">{{ product_seo_schema|json_ld }}</script>
 {% endblock %}
 {% block content %}
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -182,47 +157,19 @@
 <div class="pdp-breadcrumb">
   <a href="/">Home</a> / <a href="/shop/">Shop</a> / <a href="/category/{{ product.category.slug }}/">{{ product.category.name }}</a> / {{ product.name }}
 </div>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Shop",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/shop/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "{{ product.category.name }}",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/category/{{ product.category.slug }}/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 4,
-      "name": "{{ product.name }}"
-    }
-  ]
-}
-</script>
+{% block extra_schema %}
+<script type="application/ld+json">{{ breadcrumb_schema|json_ld }}</script>
+{% endblock %}
 
 <div class="pdp-inner">
   <!-- Gallery -->
   <div class="pdp-gallery">
     <div class="pdp-main-image" id="mainImage">
       {% with img=product.primary_image %}
-        {% if img %}
-          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" id="mainImg" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+        {% if img and img.image %}
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }} - Nismita Craft Studio" id="mainImg" width="600" height="600" fetchpriority="high" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
         {% else %}
-          <img src="{% static 'img/product-placeholder.svg' %}" alt="{{ product.name }} — photo coming soon" id="mainImg">
+          <img src="{% static 'img/product-placeholder.svg' %}" alt="{{ product.name }} — photo coming soon - Nismita Craft Studio" id="mainImg" width="600" height="600" fetchpriority="high">
         {% endif %}
       {% endwith %}
       {% if product.images.all|length > 1 %}
@@ -232,7 +179,7 @@
     <div class="pdp-thumbnails">
       {% for im in product.images.all %}
         <div class="pdp-thumb {% if im == product.primary_image %}active{% endif %}" data-image-src="{{ im.image.url }}" data-image-number="{{ forloop.counter }}" tabindex="0" role="button" onclick="changeImage(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeImage(this)}">
-          <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }} thumbnail {{ forloop.counter }}" loading="lazy" width="72" height="72">
+          <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="72" height="72">
         </div>
       {% endfor %}
     </div>
@@ -244,10 +191,7 @@
     <h1 class="pdp-title" itemprop="name">{{ product.name }}</h1>
 
     <!-- Rating -->
-    <div class="pdp-rating">
-      <span class="stars">★★★★☆</span>
-      <span class="count">4.0 · {{ product.order_items.count|default:"0" }} sold</span>
-    </div>
+    {% if product.order_items.count %}<div class="pdp-rating"><span aria-hidden="true">★★★★☆</span><span class="count">{{ product.order_items.count }} sold</span></div>{% endif %}
 
     <!-- Price -->
     <div class="pdp-price-row">
@@ -268,7 +212,7 @@
       </div>
       <div class="pdp-delivery-row">
         <span class="icon">⏱️</span>
-        <b>Delivery in 5-6 days</b>
+        <b>Dispatch in 5-6 working days</b>
       </div>
       <div class="pdp-delivery-row">
         <span class="icon">📍</span>

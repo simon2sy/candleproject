@@ -8,8 +8,10 @@ from django.urls import include, path, re_path
 from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
+from django.shortcuts import render
 
 from config.health import healthz, readyz
+from storefront.seo import canonical_base
 from storefront.sitemaps import CategorySitemap, ProductSitemap, StaticViewSitemap
 
 SITEMAPS = {
@@ -20,6 +22,10 @@ SITEMAPS = {
 
 
 def robots_txt(request):
+    # Public pages are fully crawlable. Private / transactional / internal
+    # areas are disallowed so Google never indexes cart, checkout, accounts,
+    # orders, staff tools, APIs or auth flows. The sitemap URL is absolute
+    # on the canonical HTTPS domain (never the request/dev host).
     lines = [
         "User-agent: *",
         "Allow: /",
@@ -30,9 +36,13 @@ def robots_txt(request):
         "Disallow: /orders/",
         "Disallow: /wishlist/",
         "Disallow: /customer-preview/",
+        "Disallow: /login/",
+        "Disallow: /register/",
+        "Disallow: /logout/",
+        "Disallow: /payment/",
         "Disallow: /api/",
         "",
-        f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}",
+        f"Sitemap: {canonical_base()}/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
 
@@ -40,6 +50,23 @@ def robots_txt(request):
 admin.site.site_header = "Nismita Craft Studio — Supplier Admin"
 admin.site.site_title = "Nismita Supplier Admin"
 admin.site.index_title = "Manage catalogue, orders & customers"
+
+
+def handler404_view(request, exception):
+    response = render(request, "storefront/404.html", status=404)
+    # Keep error pages out of the index without touching security settings.
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+def handler500_view(request):
+    response = render(request, "storefront/500.html", status=500)
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+handler404 = handler404_view
+handler500 = handler500_view
 
 urlpatterns = [
     path("healthz/", healthz, name="healthz"),

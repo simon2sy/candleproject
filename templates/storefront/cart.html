@@ -1,8 +1,16 @@
 {% extends "storefront/base.html" %}{% load static %}{% load currency %}
-{% block title %}Cart — Nismita Craft Studio{% endblock %}
+{% block title %}Shopping Cart | Nismita Craft Studio{% endblock %}
+{% block seo_title %}Shopping Cart | Nismita Craft Studio{% endblock %}
+{% block meta_description %}Review your Nismita Craft Studio cart before checkout.{% endblock %}
+{% block seo_description %}Review your Nismita Craft Studio cart before checkout.{% endblock %}
+{% block og_title %}Shopping Cart | Nismita Craft Studio{% endblock %}
+{% block twitter_title %}Shopping Cart | Nismita Craft Studio{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+{% block structured_data %}{% endblock %}
+{% block extra_schema %}{% endblock %}
 {% block content %}<section class="section">
 <div class="section-head">
-  <div><h2>Shopping Cart 🛒</h2><div class="sub">{{ cart.count }} item{{ cart.count|pluralize }} · subtotal {{ subtotal|money }}</div></div>
+  <div><h1>Shopping Cart 🛒</h1><div class="sub">{{ cart.count }} item{{ cart.count|pluralize }} · subtotal {{ subtotal|money }}</div></div>
   <a class="btn ghost" href="/shop/">Continue shopping</a>
 </div>
 {% if items %}
@@ -10,8 +18,8 @@
   <div class="cart-lines">
     {% for i in items %}
     <article class="line-item">
-      <a class="thumb" href="/product/{{ i.product.slug }}/">{% with img=i.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ i.product.name }}" loading="lazy" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
-      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ i.product.name }}" loading="lazy">{% endif %}{% endwith %}</a>
+      <a class="thumb" href="/product/{{ i.product.slug }}/">{% with img=i.product.primary_image %}{% if img and img.image %}<img src="{{ img.image.url }}" alt="{{ i.product.name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="120" height="120" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ i.product.name }} — photo coming soon - Nismita Craft Studio" loading="lazy" decoding="async" width="120" height="120">{% endif %}{% endwith %}</a>
       <div class="line-main">
         <a class="line-name" href="/product/{{ i.product.slug }}/">{{ i.product.name }}</a>
         <small class="muted">{% if i.variant %}{{ i.variant.name }} · {% endif %}{{ i.unit_price|money }} each</small>

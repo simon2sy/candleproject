@@ -1,4 +1,11 @@
-{% extends "storefront/base.html" %}{% load currency %}{% load static %}{% block title %}Order {{ order.order_number }} — Nismita{% endblock %}
+{% extends "storefront/base.html" %}{% load currency %}{% load static %}
+{% block title %}Order {{ order.order_number }} | Nismita Craft Studio{% endblock %}
+{% block seo_title %}Order {{ order.order_number }} | Nismita Craft Studio{% endblock %}
+{% block meta_description %}Order {{ order.order_number }} confirmation from Nismita Craft Studio.{% endblock %}
+{% block seo_description %}Order {{ order.order_number }} confirmation from Nismita Craft Studio.{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+{% block structured_data %}{% endblock %}
+{% block extra_schema %}{% endblock %}
 {% block content %}<section class="section" style="max-width:760px">
 <div class="alert" style="border-left:4px solid #2e9e5b">✅ <b>Order placed: {{ order.order_number }}</b> — status: <b>{{ order.get_status_display }}</b></div>
 {% if order.payment_status == 'VERIFIED' %}
@@ -10,7 +17,7 @@
 <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px">
 <h3>1️⃣ Scan the QR &amp; pay {{ order.total|money }}</h3>
 <p style="color:var(--muted);margin:4px 0 10px">Open <b>eSewa / Khalti / IME Pay / Banking app</b> → Scan &amp; Pay → pay <b>{{ order.total|money }}</b> using this QR:</p>
-<img src="{% static 'img/payment_qr.png' %}" alt="Payment QR code" width="180" height="180" style="display:block;background:#fff;border:2px dashed var(--purple);border-radius:14px;padding:8px;margin:0 auto">
+<img src="{% static 'img/payment_qr.png' %}" alt="Nismita Craft Studio QR payment code for order {{ order.order_number }}" width="180" height="180" loading="lazy" decoding="async" style="display:block;background:#fff;border:2px dashed var(--purple);border-radius:14px;padding:8px;margin:0 auto">
 <p>2️⃣ <b>Send the payment screenshot on WhatsApp</b> 👇</p>
 <a class="btn" style="background:#25D366;border-color:#25D366;display:inline-flex;gap:10px;align-items:center" href="{{ wa_url }}" target="_blank" rel="noopener">💬 Send screenshot & order details on WhatsApp</a>
 <h3 style="margin-top:18px">3️⃣ Admin confirms your order</h3>

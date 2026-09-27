@@ -1,8 +1,17 @@
-{% extends "storefront/base.html" %}{% load static %}{% block title %}Sign In — Nismita Craft Studio{% endblock %}
+{% extends "storefront/base.html" %}{% load static %}
+{% block title %}Sign In | Nismita Craft Studio{% endblock %}
+{% block seo_title %}Sign In | Nismita Craft Studio{% endblock %}
+{% block meta_description %}Sign in to your Nismita Craft Studio account to shop faster.{% endblock %}
+{% block seo_description %}Sign in to your Nismita Craft Studio account to shop faster.{% endblock %}
+{% block og_title %}Sign In | Nismita Craft Studio{% endblock %}
+{% block twitter_title %}Sign In | Nismita Craft Studio{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+{% block structured_data %}{% endblock %}
+{% block extra_schema %}{% endblock %}
 {% block content %}
 <div style="padding:0 20px"><div class="auth-wrap">
   <div class="auth-side">
-    <img src="{% static 'img/logo.png' %}" alt="Nismita">
+    <img src="{% static 'img/logo.png' %}" alt="Nismita Craft Studio logo" width="72" height="72" loading="lazy" decoding="async">
     <div class="eyebrow" style="background:#fff;color:var(--purple-dark);align-self:flex-start">NISMITA CRAFT STUDIO</div>
     <h2>Welcome back, maker.</h2>
     <p>Sign in to sync your cart, wishlist & orders across devices. Your saved cart merges automatically after login.</p>

@@ -1,5 +1,14 @@
-{% extends "storefront/base.html" %}{% load currency %}{% load static %}{% block title %}Checkout — Nismita{% endblock %}
-{% block content %}<section class="section"><h2>Checkout</h2><div class="sub">{{ items|length }} items · subtotal {{ subtotal|money }} · delivery {{ shipping|money }}</div>
+{% extends "storefront/base.html" %}{% load currency %}{% load static %}
+{% block title %}Checkout | Nismita Craft Studio{% endblock %}
+{% block seo_title %}Checkout | Nismita Craft Studio{% endblock %}
+{% block meta_description %}Complete your Nismita Craft Studio order securely.{% endblock %}
+{% block seo_description %}Complete your Nismita Craft Studio order securely.{% endblock %}
+{% block og_title %}Checkout | Nismita Craft Studio{% endblock %}
+{% block twitter_title %}Checkout | Nismita Craft Studio{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+{% block structured_data %}{% endblock %}
+{% block extra_schema %}{% endblock %}
+{% block content %}<section class="section"><h1>Checkout</h1><div class="sub">{{ items|length }} items · subtotal {{ subtotal|money }} · delivery {{ shipping|money }}</div>
 <style>
 .qr-steps{display:grid;gap:12px;margin-top:10px}
 .qr-step{display:flex;gap:12px;align-items:flex-start;background:#fbfaff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
@@ -32,7 +41,7 @@
   <div class="qr-steps">
     <div class="qr-step"><span class="qr-num">1</span><div><b>Scan the QR &amp; pay {{ total|money }}</b>
       <p>Open <b>eSewa, Khalti, IME Pay or any banking app</b> → choose <b>Scan &amp; Pay</b> → scan this QR → pay the total amount.</p>
-      <img class="qr-img" src="{% static 'img/payment_qr.png' %}" alt="Nismita Craft Studio payment QR code" width="170" height="170">
+      <img class="qr-img" src="{% static 'img/payment_qr.png' %}" alt="Nismita Craft Studio QR payment code for orders in Nepal" width="170" height="170" loading="lazy" decoding="async">
     </div></div>
     <div class="qr-step"><span class="qr-num">2</span><div><b>Save your payment screenshot</b>
       <p>Take a screenshot of the success screen (or note the transaction ID).</p>

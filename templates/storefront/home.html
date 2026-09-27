@@ -1,60 +1,14 @@
-{% extends "storefront/base.html" %}{% load static %}{% load currency %}
-{% block seo_title %}Candle & Cold Process Soap Materials Supplier in Nepal | Nismita Craft Studio{% endblock %}
-{% block seo_description %}Buy candle and cold process soap making materials in Nepal from Nismita Craft Studio. Shop soy wax, soap bases, wicks, silicone molds, colours and crafting tools with delivery across Nepal.{% endblock %}
+{% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load seo_tags %}
+{% block title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
+{% block seo_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
+{% block meta_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
+{% block seo_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
+{% block og_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
+{% block og_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
+{% block twitter_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
+{% block twitter_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
 {% block structured_data %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "@id": "{{ request.build_absolute_uri }}#organization",
-      "name": "Nismita Craft Studio",
-      "url": "{{ request.build_absolute_uri }}",
-      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}",
-      "description": "Candle and cold process soap making material supplier serving customers across Nepal.",
-      "founder": {"@type": "Person", "name": "Sumita Basel"},
-      "telephone": "+977-970-8909514",
-      "address": {"@type": "PostalAddress", "streetAddress": "Narephate-32", "addressLocality": "Kathmandu", "addressCountry": "NP"},
-      "sameAs": ["https://www.instagram.com/nismita_craft_studio", "https://www.tiktok.com/@nismita_craft_studio"]
-    },
-    {
-      "@type": "WebSite",
-      "@id": "{{ request.build_absolute_uri }}#website",
-      "url": "{{ request.build_absolute_uri }}",
-      "name": "Nismita Craft Studio",
-      "publisher": {"@id": "{{ request.build_absolute_uri }}#organization"},
-      "inLanguage": "en-NP",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {"@type": "EntryPoint", "urlTemplate": "{{ request.build_absolute_uri }}shop/?search={search_term_string}"},
-        "query-input": "required name=search_term_string"
-      }
-    },
-    {
-      "@type": "Store",
-      "@id": "{{ request.build_absolute_uri }}#store",
-      "name": "Nismita Craft Studio",
-      "url": "{{ request.build_absolute_uri }}",
-      "parentOrganization": {"@id": "{{ request.build_absolute_uri }}#organization"},
-      "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/Owner photo/owner.jpeg' %}",
-      "telephone": "+977-970-8909514",
-      "priceRange": "NPR",
-      "currenciesAccepted": "NPR",
-      "paymentAccepted": "QR payment, Cash on Delivery",
-      "areaServed": {"@type": "Country", "name": "Nepal"},
-      "address": {"@type": "PostalAddress", "streetAddress": "Narephate-32", "addressLocality": "Kathmandu", "addressCountry": "NP"}
-    },
-    {
-      "@type": "BreadcrumbList",
-      "@id": "{{ request.build_absolute_uri }}#breadcrumb",
-      "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ request.build_absolute_uri }}"}
-      ]
-    }
-  ]
-}
-</script>
+<script type="application/ld+json">{{ homepage_schema|json_ld }}</script>
 {% endblock %}
 {% block content %}
 <style>
@@ -100,8 +54,8 @@
 <section class="hero"><div class="hero-inner">
   <div>
     <span class="eyebrow">NISMITA CRAFT STUDIO</span>
-    <h1>Candle &amp; Cold Process Soap Materials Supplier in Nepal</h1>
-    <p class="hero-subtitle">From blending the wax to packing your parcel, every order gets my personal touch.</p>
+    <h1>Nismita Craft Studio</h1>
+    <p class="hero-subtitle">Candle moulds &amp; craft supplies in Nepal — from blending the wax to packing your parcel, every order gets my personal touch.</p>
     <blockquote class="hero-quote">“I test every wax, wick, colour and mold myself — if it isn't good enough for my own candles, it never reaches your studio.”<cite>— Sumita Basel · Founder &amp; Maker</cite></blockquote>
     <div class="hero-cta"><a class="btn" href="/shop/">Go to Shop</a><a class="btn ghost" href="/about/">Learn more about us</a></div>
     <ul class="hero-points">
@@ -112,16 +66,16 @@
   </div>
   <div class="hero-owner">
     <span class="oh-spark s1">✦</span><span class="oh-spark s2">✧</span><span class="oh-spark s3">✦</span>
-    <img class="oh-photo" src="{% static 'img/Owner photo/owner.jpeg' %}" alt="Sumita Basel, founder of Nismita Craft Studio">
+    <img class="oh-photo" src="{% static 'img/Owner photo/owner.jpeg' %}" alt="Sumita Basel, founder of Nismita Craft Studio" width="190" height="250" loading="eager" fetchpriority="high">
     <span class="oh-badge">🇳🇵 Handmade in Kathmandu</span>
     <div class="oh-name">SUMITA BASEL<small>FOUNDER · CANDLE MAKER</small></div>
     <p class="oh-tag">“From blending the wax to packing your parcel, every order gets my personal touch.”</p>
     <ul class="oh-chips">
-      <li><a href="/shop/">🕯️ Soy Wax</a></li>
-      <li><a href="/shop/">🧵 Cotton Wicks</a></li>
-      <li><a href="/shop/">🍮 Silicone Molds</a></li>
-      <li><a href="/shop/">🎨 Mica Colours</a></li>
-      <li><a href="/shop/">✨ Glitter</a></li>
+      <li><a href="/category/candle-wax/">🕯️ Soy Wax</a></li>
+      <li><a href="/category/candle-wick/">🧵 Cotton Wicks</a></li>
+      <li><a href="/category/candle-molds/">🍮 Silicone Molds</a></li>
+      <li><a href="/category/colours-glitters/">🎨 Mica Colours</a></li>
+      <li><a href="/category/colours-glitters/">✨ Glitter</a></li>
     </ul>
     <div class="oh-foot"><span>✓ Verified supplier</span><span>🚚 5–6 day dispatch</span><span>↩️ 7-day returns</span></div>
   </div>

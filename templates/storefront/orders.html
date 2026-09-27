@@ -1,7 +1,13 @@
 {% extends "storefront/base.html" %}{% load static %}{% load currency %}
-{% block title %}My Orders — Nismita{% endblock %}
+{% block title %}My Orders | Nismita Craft Studio{% endblock %}
+{% block seo_title %}My Orders | Nismita Craft Studio{% endblock %}
+{% block meta_description %}Track your Nismita Craft Studio orders.{% endblock %}
+{% block seo_description %}Track your Nismita Craft Studio orders.{% endblock %}
+{% block seo_robots %}noindex,nofollow{% endblock %}
+{% block structured_data %}{% endblock %}
+{% block extra_schema %}{% endblock %}
 {% block content %}<section class="section">
-<div class="section-head"><div><h2>My Orders 📦</h2><div class="sub">{{ orders|length }} order{{ orders|length|pluralize }} placed</div></div><a class="btn ghost" href="/shop/">Continue shopping</a></div>
+<div class="section-head"><div><h1>My Orders 📦</h1><div class="sub">{{ orders|length }} order{{ orders|length|pluralize }} placed</div></div><a class="btn ghost" href="/shop/">Continue shopping</a></div>
 {% for o in orders %}
 <article class="order-card">
   <header class="order-card-head">
@@ -11,8 +17,8 @@
   <div class="order-lines">
     {% for it in o.items.all %}
     <div class="order-line">
-      <div class="thumb">{% with img=it.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ it.product_name }}" loading="lazy" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
-      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ it.product_name }}" loading="lazy">{% endif %}{% endwith %}</div>
+      <div class="thumb">{% with img=it.product.primary_image %}{% if img and img.image %}<img src="{{ img.image.url }}" alt="{{ it.product_name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="120" height="120" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+      {% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ it.product_name }} — photo coming soon - Nismita Craft Studio" loading="lazy" decoding="async" width="120" height="120">{% endif %}{% endwith %}</div>
       <div class="order-line-main"><a href="/product/{{ it.product.slug }}/"><b>{{ it.product_name }}</b></a><small>SKU {{ it.sku }} · {{ it.quantity }} × {{ it.unit_price|money }}</small></div>
       <b class="order-line-total">{{ it.total_price|money }}</b>
     </div>

@@ -1,35 +1,16 @@
-{% extends "storefront/base.html" %}
-{% block seo_title %}{% if category %}{{ category.name }} & Candle Making Supplies in Nepal{% else %}Candle & Cold Process Soap Materials in Nepal{% endif %} | Nismita Craft Studio{% endblock %}
-{% block seo_description %}{% if category and category.description %}{{ category.description|truncatechars:150 }}{% elif category %}Shop {{ category.name }} and quality candle making materials in Nepal from Nismita Craft Studio.{% else %}Shop candle making and cold process soap materials across Nepal, including wax, soap bases, wicks, molds, fragrance oils, colours and tools.{% endif %}{% endblock %}
-{% block seo_robots %}{% if search %}noindex,follow{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
+{% extends "storefront/base.html" %}{% load static %}{% load seo_tags %}
+{% block title %}{{ category.name }} | Nismita Craft Studio{% endblock %}
+{% block seo_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block meta_description %}{{ category_seo_description }}{% endblock %}
+{% block seo_description %}{{ category_seo_description }}{% endblock %}
+{% block og_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block og_description %}{{ category_seo_description }}{% endblock %}
+{% block twitter_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block twitter_description %}{{ category_seo_description }}{% endblock %}
 {% block og_type %}website{% endblock %}
+{% block seo_robots %}{% if seo_robots_extra %}{{ seo_robots_extra }}{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
 {% block structured_data %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Shop",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/shop/"
-    }{% if category %},
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "{{ category.name }}",
-      "item": "{{ request.scheme }}://{{ request.get_host }}/category/{{ category.slug }}/"
-    }{% endif %}
-  ]
-}
-</script>
+<script type="application/ld+json">{{ category_schema|json_ld }}</script>
 {% endblock %}
 {% block content %}<section class="section">
 <div class="breadcrumb"><a href="/">Home</a> / {% if category %}<a href="/shop/">Shop</a> / {{ category.name }}{% else %}Shop{% endif %}</div>

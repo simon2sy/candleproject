@@ -1,8 +1,8 @@
 {% load static %}
 <div class="card">
   <div class="card-media">
-    <a href="/product/{{ p.slug }}/" aria-label="{{ p.name }}">
-      {% with img=p.images.first %}{% if img %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:p.name }}" loading="lazy" decoding="async">{% endif %}{% endwith %}
+    <a href="/product/{{ p.slug }}/" aria-label="{{ p.name }} - Nismita Craft Studio">
+      {% with img=p.primary_image %}{% if img and img.image %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:p.name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="400" height="400" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">{% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ p.name }} — photo coming soon - Nismita Craft Studio" loading="lazy" decoding="async" width="400" height="400">{% endif %}{% endwith %}
     </a>
     {% if p.stock_quantity == 0 %}<span class="ribbon out">Out of stock</span>{% elif p.compare_at_price %}<span class="ribbon save">-{{ p.discount_percent }}%</span>{% endif %}
     {# POST (not GET): adding to the wishlist changes state and needs the CSRF token. #}

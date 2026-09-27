@@ -25,6 +25,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Address, User
 from catalog.models import Category, Product, ProductVariant
 from config.ratelimit import AttemptLimiter, client_ip
+from storefront.seo import absolute_url, canonical_base, canonical_url
 from orders.gateways import TransactionResult, gateway_ready, get_gateway
 from orders.models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 from orders.services import InsufficientStock, _display_price, place_order_from_cart
@@ -165,10 +166,45 @@ def home(request):
     if g:
         return g
     base = Product.objects.filter(is_active=True).select_related("seller", "category").prefetch_related("tags", "images")
+    home_url = absolute_url(request, "/")
+    org_id = f"{canonical_base()}/#organization"
     ctx = {
         "featured": base.filter(is_featured=True)[:8],
         "latest": base.order_by("-created_at")[:8],
         "stats": {"products": Product.objects.filter(is_active=True).count(), "categories": Category.objects.filter(is_active=True).count()},
+        # Real business info only (name/URL/logo/socials + visible address/phone).
+        # No invented ratings, reviews, SKUs or prices.
+        "homepage_schema": {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Organization",
+                    "@id": org_id,
+                    "name": "Nismita Craft Studio",
+                    "url": f"{canonical_base()}/",
+                    "logo": absolute_url(request, "/static/img/logo.png"),
+                    "sameAs": [
+                        "https://www.instagram.com/nismita_craft_studio",
+                        "https://www.tiktok.com/@nismita_craft_studio",
+                    ],
+                },
+                {
+                    "@type": "WebSite",
+                    "@id": f"{canonical_base()}/#website",
+                    "url": f"{canonical_base()}/",
+                    "name": "Nismita Craft Studio",
+                    "publisher": {"@id": org_id},
+                    "inLanguage": "en-NP",
+                },
+                {
+                    "@type": "BreadcrumbList",
+                    "@id": f"{home_url}#breadcrumb",
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": 1, "name": "Home", "item": home_url},
+                    ],
+                },
+            ],
+        },
     }
     ctx.update(_nav(request))
     return render(request, "storefront/home.html", ctx)
@@ -203,6 +239,25 @@ def shop(request, slug=None):
         return g
     category = get_object_or_404(Category, slug=slug, is_active=True) if slug else None
     page = Paginator(_filtered_products(request.GET, category), 12).get_page(request.GET.get("page"))
+    shop_url = absolute_url(request, "/shop/")
+    if category:
+        category_url = absolute_url(request, f"/category/{category.slug}/")
+        raw_desc = (category.description or "").strip()
+        if raw_desc:
+            category_desc = " ".join(raw_desc.split())[:155]
+        else:
+            category_desc = f"Shop {category.name} at Nismita Craft Studio — quality craft supplies in Nepal with delivery across Nepal."
+        crumbs = [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
+            {"@type": "ListItem", "position": 2, "name": "Shop", "item": shop_url},
+            {"@type": "ListItem", "position": 3, "name": category.name, "item": category_url},
+        ]
+    else:
+        category_desc = "Shop candle moulds, wax, wicks, colours & craft supplies in Nepal at Nismita Craft Studio with delivery across Nepal."
+        crumbs = [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
+            {"@type": "ListItem", "position": 2, "name": "Shop", "item": shop_url},
+        ]
     ctx = {
         "products": page,
         "category": category,
@@ -211,6 +266,12 @@ def shop(request, slug=None):
         "min_price": request.GET.get("min_price", "").strip(),
         "max_price": request.GET.get("max_price", "").strip(),
         "ordering": request.GET.get("ordering", ""),
+        "category_seo_description": category_desc,
+        "category_schema": {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": crumbs,
+        },
     }
     ctx.update(_nav(request))
     return render(request, "storefront/shop.html", ctx)
@@ -230,36 +291,70 @@ def detail(request, slug):
         .select_related("category")
         .prefetch_related("images", "tags")[:4]
     )
-    image_url = ""
+    # --- SEO: canonical image/description/schema from real DB fields only ---
     seo_image = product.primary_image
-    if seo_image and seo_image.image:
-        image_url = request.build_absolute_uri(seo_image.image.url)
-    description = product.short_description or " ".join(product.description.split()) or f"Buy {product.name} for candle making or cold process soap making in Nepal."
+    image_url = ""
+    if seo_image is not None and getattr(seo_image, "image", None):
+        try:
+            image_url = absolute_url(request, seo_image.image.url)
+        except ValueError:
+            image_url = ""
+    raw_desc = (product.short_description or product.description or "").strip()
+    description = " ".join(raw_desc.split())
+    if not description:
+        description = f"{product.name} available at Nismita Craft Studio with delivery across Nepal."
+    description = description[:155]
+    product_url = canonical_url(request, f"/product/{product.slug}/")
+    offer = {
+        "@type": "Offer",
+        "url": product_url,
+        "priceCurrency": "NPR",
+        "price": str(product.price),
+        "availability": (
+            "https://schema.org/InStock"
+            if product.stock_quantity > 0 and product.is_available
+            else "https://schema.org/OutOfStock"
+        ),
+        "itemCondition": "https://schema.org/NewCondition",
+        "seller": {"@type": "Organization", "name": "Nismita Craft Studio"},
+    }
     product_seo_schema = {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": product.name,
-        "description": description[:5000],
+        "description": (product.short_description or product.description or description)[:5000],
         "sku": product.sku,
         "category": product.category.name,
         "brand": {"@type": "Brand", "name": "Nismita Craft Studio"},
-        "url": request.build_absolute_uri(),
-        "image": [image_url] if image_url else [],
-        "offers": {
-            "@type": "Offer",
-            "url": request.build_absolute_uri(),
-            "priceCurrency": "NPR",
-            "price": str(product.price),
-            "availability": "https://schema.org/InStock" if product.stock_quantity > 0 and product.is_available else "https://schema.org/OutOfStock",
-            "itemCondition": "https://schema.org/NewCondition",
-            "seller": {"@type": "Organization", "name": "Nismita Craft Studio"},
-        },
+        "url": product_url,
+        "offers": offer,
     }
+    if image_url:
+        product_seo_schema["image"] = [image_url]
+    breadcrumb_schema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
+            {"@type": "ListItem", "position": 2, "name": "Shop", "item": absolute_url(request, "/shop/")},
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": product.category.name,
+                "item": absolute_url(request, f"/category/{product.category.slug}/"),
+            },
+            {"@type": "ListItem", "position": 4, "name": product.name, "item": product_url},
+        ],
+    }
+    # No invented ratings/reviews/stock/prices: only fields from the database.
     ctx = {
         "product": product,
         "related": related,
         "shipping": settings.SHIPPING_FLAT,
+        "product_seo_description": description,
+        "product_seo_image_url": image_url,
         "product_seo_schema": product_seo_schema,
+        "breadcrumb_schema": breadcrumb_schema,
     }
     ctx.update(_nav(request))
     return render(request, "storefront/detail.html", ctx)
