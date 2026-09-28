@@ -1,12 +1,20 @@
 """Shared SEO context for every storefront template.
 
 Provides ``canonical_url`` (HTTPS + preferred domain, no query strings),
+``site_schema`` (the single Organization + WebSite JSON-LD graph),
 ``seo_robots_extra`` (used to keep paginated/filtered duplicates out of the
 index) and Open Graph helpers without touching business logic.
 """
 from __future__ import annotations
 
-from .seo import DEFAULT_OG_IMAGE, absolute_url, canonical_domain, canonical_url
+from .seo import (
+    BRAND_NAME,
+    DEFAULT_OG_IMAGE,
+    absolute_url,
+    canonical_domain,
+    canonical_url,
+    site_schema,
+)
 
 
 def _robots_extra(request) -> str:
@@ -31,4 +39,8 @@ def seo(request):
         "canonical_domain": canonical_domain(),
         "seo_robots_extra": _robots_extra(request),
         "og_image_default": absolute_url(request, DEFAULT_OG_IMAGE),
+        # Rendered once in base.html so Organization/WebSite are declared
+        # exactly once per page (no duplicate or conflicting entities).
+        "site_schema": site_schema(),
+        "brand_name": BRAND_NAME,
     }

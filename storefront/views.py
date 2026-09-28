@@ -25,7 +25,14 @@ from django.views.decorators.http import require_POST
 from accounts.models import Address, User
 from catalog.models import Category, Product, ProductVariant
 from config.ratelimit import AttemptLimiter, client_ip
-from storefront.seo import absolute_url, canonical_base, canonical_url
+from storefront.seo import (
+    BRAND_NAME,
+    absolute_url,
+    canonical_base,
+    canonical_url,
+    local_business_node,
+)
+from storefront.seo_content import category_seo
 from orders.gateways import TransactionResult, gateway_ready, get_gateway
 from orders.models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 from orders.services import InsufficientStock, _display_price, place_order_from_cart
@@ -34,6 +41,15 @@ from orders.validators import validate_payment_screenshot
 from .nepal import PROVINCES, PROVINCE_CHOICES
 
 logger = logging.getLogger(__name__)
+
+# Exact, on-brand homepage copy (kept in one place so the meta description,
+# the WebPage schema and the <title> can never drift apart).
+HOME_TITLE = "Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal"
+HOME_DESCRIPTION = (
+    "Nismita Craft Studio offers candle moulds, wax, wicks, colours and "
+    "craft supplies in Nepal. Shop candle-making materials online with "
+    "delivery across Nepal."
+)
 
 # Brute-force protection for the template forms.  The JSON API is throttled by
 # DRF (``config.throttles``), but ``/login/`` and ``/register/`` are plain Django
@@ -91,7 +107,13 @@ def _post_login_redirect(request, user, next_url=""):
 
 
 def _nav(request):
-    ctx = {"nav_categories": Category.objects.filter(is_active=True, parent__isnull=True)[:6]}
+    # `nav_categories` drives the compact menus; `all_categories` gives the
+    # homepage/footer a wider set of crawlable internal links.
+    active = Category.objects.filter(is_active=True, parent__isnull=True)
+    ctx = {
+        "nav_categories": active[:6],
+        "all_categories": Category.objects.filter(is_active=True).order_by("name")[:12],
+    }
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
         ctx["cart_count"] = cart.count
@@ -178,23 +200,15 @@ def home(request):
             "@context": "https://schema.org",
             "@graph": [
                 {
-                    "@type": "Organization",
-                    "@id": org_id,
-                    "name": "Nismita Craft Studio",
-                    "url": f"{canonical_base()}/",
-                    "logo": absolute_url(request, "/static/img/logo.png"),
-                    "sameAs": [
-                        "https://www.instagram.com/nismita_craft_studio",
-                        "https://www.tiktok.com/@nismita_craft_studio",
-                    ],
-                },
-                {
-                    "@type": "WebSite",
-                    "@id": f"{canonical_base()}/#website",
-                    "url": f"{canonical_base()}/",
-                    "name": "Nismita Craft Studio",
-                    "publisher": {"@id": org_id},
+                    "@type": "WebPage",
+                    "@id": f"{home_url}#webpage",
+                    "url": home_url,
+                    "name": "Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal",
+                    "description": HOME_DESCRIPTION,
                     "inLanguage": "en-NP",
+                    "isPartOf": {"@id": f"{canonical_base()}/#website"},
+                    "about": {"@id": org_id},
+                    "breadcrumb": {"@id": f"{home_url}#breadcrumb"},
                 },
                 {
                     "@type": "BreadcrumbList",
@@ -238,40 +252,94 @@ def shop(request, slug=None):
     if g:
         return g
     category = get_object_or_404(Category, slug=slug, is_active=True) if slug else None
-    page = Paginator(_filtered_products(request.GET, category), 12).get_page(request.GET.get("page"))
+    products = _filtered_products(request.GET, category)
+    total = products.count()
+    page = Paginator(products, 12).get_page(request.GET.get("page"))
     shop_url = absolute_url(request, "/shop/")
+    self_url = absolute_url(request, f"/category/{category.slug}/") if category else shop_url
     if category:
-        category_url = absolute_url(request, f"/category/{category.slug}/")
-        raw_desc = (category.description or "").strip()
-        if raw_desc:
-            category_desc = " ".join(raw_desc.split())[:155]
-        else:
-            category_desc = f"Shop {category.name} at Nismita Craft Studio — quality craft supplies in Nepal with delivery across Nepal."
+        seo = category_seo(category.slug, category.name, total)
         crumbs = [
             {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
             {"@type": "ListItem", "position": 2, "name": "Shop", "item": shop_url},
-            {"@type": "ListItem", "position": 3, "name": category.name, "item": category_url},
+            {"@type": "ListItem", "position": 3, "name": category.name, "item": self_url},
         ]
     else:
-        category_desc = "Shop candle moulds, wax, wicks, colours & craft supplies in Nepal at Nismita Craft Studio with delivery across Nepal."
+        seo = category_seo(
+            "shop-all-craft-supplies",
+            "Candle Making Supplies & Craft Supplies",
+            total,
+        )
+        # The /shop/ listing is the hub: point its SEO copy at the real hub
+        # title instead of borrowing a category name.
+        seo["seo_title"] = f"Shop Candle Making Supplies in Nepal | {BRAND_NAME}"
+        seo["h1"] = "Candle Making Supplies in Nepal"
+        seo["meta_description"] = (
+            f"Shop candle making supplies in Nepal at {BRAND_NAME}: candle "
+            "moulds, wax, wicks, mica colours, glitters and tools, delivered "
+            "across Nepal from Kathmandu."
+        )
         crumbs = [
             {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
             {"@type": "ListItem", "position": 2, "name": "Shop", "item": shop_url},
         ]
+
+    # ItemList of the products actually shown on this page (real DB values).
+    item_list = {
+        "@type": "ItemList",
+        "name": category.name if category else "Candle making supplies",
+        "numberOfItems": len(page.object_list),
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": i,
+                "url": absolute_url(request, f"/product/{p.slug}/"),
+                "name": p.name,
+            }
+            for i, p in enumerate(page.object_list, start=1)
+        ],
+    }
+
+    category_schema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "CollectionPage",
+                "@id": f"{self_url}#webpage",
+                "url": self_url,
+                "name": seo["seo_title"],
+                "description": seo["meta_description"],
+                "inLanguage": "en-NP",
+                "isPartOf": {"@id": f"{canonical_base()}/#website"},
+                "breadcrumb": {"@id": f"{self_url}#breadcrumb"},
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": f"{self_url}#breadcrumb",
+                "itemListElement": crumbs,
+            },
+            item_list,
+        ],
+    }
+
     ctx = {
         "products": page,
         "category": category,
-        "categories": Category.objects.filter(is_active=True, parent__isnull=True).annotate(Count("products")),
+        "categories": Category.objects.filter(is_active=True, parent__isnull=True)
+        .annotate(Count("products"))
+        .order_by("name"),
         "search": request.GET.get("search", "").strip(),
         "min_price": request.GET.get("min_price", "").strip(),
         "max_price": request.GET.get("max_price", "").strip(),
         "ordering": request.GET.get("ordering", ""),
-        "category_seo_description": category_desc,
-        "category_schema": {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": crumbs,
-        },
+        "seo_title": seo["seo_title"],
+        "h1": seo["h1"],
+        "category_seo_description": seo["meta_description"],
+        "intro_html": seo["intro_html"],
+        "sections": seo["sections"],
+        "shipping_note": seo["shipping_note"],
+        "category_schema": category_schema,
     }
     ctx.update(_nav(request))
     return render(request, "storefront/shop.html", ctx)
@@ -292,69 +360,102 @@ def detail(request, slug):
         .prefetch_related("images", "tags")[:4]
     )
     # --- SEO: canonical image/description/schema from real DB fields only ---
-    seo_image = product.primary_image
-    image_url = ""
-    if seo_image is not None and getattr(seo_image, "image", None):
-        try:
-            image_url = absolute_url(request, seo_image.image.url)
-        except ValueError:
-            image_url = ""
     raw_desc = (product.short_description or product.description or "").strip()
     description = " ".join(raw_desc.split())
     if not description:
-        description = f"{product.name} available at Nismita Craft Studio with delivery across Nepal."
-    description = description[:155]
+        description = (
+            f"{product.name} — {product.category.name} from Nismita Craft "
+            "Studio, Kathmandu. Delivered across Nepal."
+        )
+    # Append the factual commercial context so each product description is
+    # unique and states where it ships from and what it costs (real values).
+    description = (
+        f"{description} Available from Nismita Craft Studio in Kathmandu, "
+        f"NPR {product.price}. Delivery across Nepal."
+    )[:158]
     product_url = canonical_url(request, f"/product/{product.slug}/")
+    in_stock = product.stock_quantity > 0 and product.is_available
     offer = {
         "@type": "Offer",
         "url": product_url,
         "priceCurrency": "NPR",
         "price": str(product.price),
         "availability": (
-            "https://schema.org/InStock"
-            if product.stock_quantity > 0 and product.is_available
+            "https://schema.org/InStock" if in_stock
             else "https://schema.org/OutOfStock"
         ),
         "itemCondition": "https://schema.org/NewCondition",
-        "seller": {"@type": "Organization", "name": "Nismita Craft Studio"},
+        "seller": {"@id": f"{canonical_base()}/#organization"},
     }
+    images = []
+    for im in product.images.all():
+        if getattr(im, "image", None):
+            try:
+                images.append(absolute_url(request, im.image.url))
+            except ValueError:
+                pass
     product_seo_schema = {
         "@context": "https://schema.org",
-        "@type": "Product",
-        "name": product.name,
-        "description": (product.short_description or product.description or description)[:5000],
-        "sku": product.sku,
-        "category": product.category.name,
-        "brand": {"@type": "Brand", "name": "Nismita Craft Studio"},
-        "url": product_url,
-        "offers": offer,
-    }
-    if image_url:
-        product_seo_schema["image"] = [image_url]
-    breadcrumb_schema = {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
-            {"@type": "ListItem", "position": 2, "name": "Shop", "item": absolute_url(request, "/shop/")},
+        "@graph": [
             {
-                "@type": "ListItem",
-                "position": 3,
-                "name": product.category.name,
-                "item": absolute_url(request, f"/category/{product.category.slug}/"),
+                "@type": "Product",
+                "@id": f"{product_url}#product",
+                "name": product.name,
+                "description": (
+                    product.short_description or product.description or description
+                )[:2000],
+                "sku": product.sku,
+                "mpn": product.sku,
+                "category": product.category.name,
+                "url": product_url,
+                "brand": {"@type": "Brand", "name": BRAND_NAME},
+                "offers": offer,
             },
-            {"@type": "ListItem", "position": 4, "name": product.name, "item": product_url},
+            {
+                "@type": "WebPage",
+                "@id": f"{product_url}#webpage",
+                "url": product_url,
+                "name": f"{product.name} | Nismita Craft Studio Nepal",
+                "description": description,
+                "inLanguage": "en-NP",
+                "isPartOf": {"@id": f"{canonical_base()}/#website"},
+                "breadcrumb": {"@id": f"{product_url}#breadcrumb"},
+                "about": {"@id": f"{product_url}#product"},
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": f"{product_url}#breadcrumb",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Home", "item": absolute_url(request, "/")},
+                    {"@type": "ListItem", "position": 2, "name": "Shop", "item": absolute_url(request, "/shop/")},
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": product.category.name,
+                        "item": absolute_url(request, f"/category/{product.category.slug}/"),
+                    },
+                    {"@type": "ListItem", "position": 4, "name": product.name, "item": product_url},
+                ],
+            },
         ],
     }
+    if images:
+        # Attach every real product image to the Product node, and point the
+        # WebPage at the primary image. Keys are only added when a value
+        # exists, so the JSON never contains null placeholders.
+        product_seo_schema["@graph"][0]["image"] = images
+        product_seo_schema["@graph"][1]["primaryImageOfPage"] = {
+            "@type": "ImageObject",
+            "url": images[0],
+        }
     # No invented ratings/reviews/stock/prices: only fields from the database.
     ctx = {
         "product": product,
         "related": related,
         "shipping": settings.SHIPPING_FLAT,
         "product_seo_description": description,
-        "product_seo_image_url": image_url,
+        "product_seo_image_url": images[0] if images else "",
         "product_seo_schema": product_seo_schema,
-        "breadcrumb_schema": breadcrumb_schema,
     }
     ctx.update(_nav(request))
     return render(request, "storefront/detail.html", ctx)
@@ -765,19 +866,23 @@ def orders_view(request):
 def about(request):
     body = """
     <div class="about-content">
-      <p>Welcome to <strong>Nismita Craft Studio</strong>, a Kathmandu-based supplier for candle makers, soap makers, home crafters, studios, and growing craft businesses. We help you find dependable materials for making beautiful, consistent finished products at home or in your workspace.</p>
+      <p><strong>Nismita Craft Studio is a Kathmandu-based candle-making supplies business</strong> offering candle moulds, wax, wicks, colours and related craft supplies to customers across Nepal. We are located in Narephate, Kathmandu, and we dispatch confirmed orders to candle makers, soap makers, home crafters and small studios in every province of Nepal.</p>
+      <p>Nismita Craft Studio was founded and is run by <strong>Sumita Basel</strong>, who tests the wax, wicks, colours and moulds herself before they are listed in the shop. Everything sold on this website is supplied by Nismita Craft Studio — we are the business behind nismitacraftstudio.com.</p>
 
       <h3>What we supply</h3>
-      <p>Our collection covers the everyday essentials for candle and cold-process soap making. You can browse waxes, wicks, fragrance oils, silicone molds, soap bases, oils, lye, colourants, mica colours, glitter, additives, and practical tools. Whether you are making a small batch for yourself or preparing supplies for your studio, we want your materials to be easy to understand and reliable to use.</p>
+      <p>Our collection covers the everyday essentials for candle and cold-process soap making. You can browse <a href="/category/candle-moulds/">candle moulds</a> (including silicone moulds in different shapes and sizes), <a href="/category/candle-wax/">candle wax</a>, <a href="/category/candle-wicks/">candle wicks</a>, mica colours, glitters, fragrance oils, soap bases, oils, lye, colourants, additives and practical tools. Whether you are making a small batch for yourself or preparing supplies for your studio, we want your materials to be easy to understand and reliable to use.</p>
 
       <h3>Why choose us?</h3>
       <ul>
         <li><strong>Maker-focused selection:</strong> We choose products with practical use in mind, so you can spend less time comparing and more time creating.</li>
         <li><strong>Quality and consistency:</strong> We carefully handle our stock and check materials before they are packed for customers.</li>
-        <li><strong>Guidance when you need it:</strong> Questions about wax, wicks, molds, colours, or tools? Contact us and we will help you choose a sensible starting point.</li>
+        <li><strong>Guidance when you need it:</strong> Questions about wax, wicks, moulds, colours, or tools? <a href="/contact/">Contact us</a> and we will help you choose a sensible starting point.</li>
         <li><strong>Delivery across Nepal:</strong> We dispatch confirmed orders from Kathmandu to customers throughout Nepal. Delivery timing may vary by location and courier partner.</li>
         <li><strong>Personal service:</strong> From your first small order to a regular studio restock, we want the experience to feel straightforward and human.</li>
       </ul>
+
+      <h3>Where we are and how to reach us</h3>
+      <p>Nismita Craft Studio is based at Narephate - 32, Kathmandu, Nepal. You can call us on <a href="tel:+9779708909514">+977 970-8909514</a>, message us on <a href="https://wa.me/9779708909514" target="_blank" rel="noopener">WhatsApp</a>, or send the details through our <a href="/contact/">contact page</a>. We also post new stock and making tips on <a href="https://www.instagram.com/nismita_craft_studio/" target="_blank" rel="noopener">Instagram</a> and <a href="https://www.tiktok.com/@nismita_craft_studio" target="_blank" rel="noopener">TikTok</a>.</p>
 
       <h3>Made for your creative journey</h3>
       <p>You do not need a large factory or advanced experience to make beautiful handmade products. A properly prepared workspace, a few dependable materials, and a little experimentation are enough to begin. Our role is to make the supply stage easier, so you can focus on learning, designing, and enjoying the process.</p>
@@ -787,18 +892,90 @@ def about(request):
       <p>We aim to provide clear product information, careful order handling, and responsive communication. If you have a question before or after ordering, contact us and we will do our best to assist you. Thank you for supporting handmade craft and choosing Nismita Craft Studio.</p>
     </div>
     """
-    ctx = {"title": "About Us", "subtitle": "Reliable materials for handmade candle and soap makers in Nepal", "items": [], "body": body}
+    page_url = canonical_url(request, "/about/")
+    about_description = (
+        "Nismita Craft Studio is a Kathmandu-based candle-making supplies "
+        "business offering candle moulds, wax, wicks, colours and related "
+        "craft supplies to customers across Nepal."
+    )
+    ctx = {
+        "title": "About Nismita Craft Studio",
+        "seo_title": "About Nismita Craft Studio | Candle Supplies in Kathmandu, Nepal",
+        "h1": "About Nismita Craft Studio",
+        "subtitle": about_description,
+        "seo_description": about_description,
+        "items": [],
+        "body": body,
+        "page_schema": {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "AboutPage",
+                    "@id": f"{page_url}#webpage",
+                    "url": page_url,
+                    "name": "About Nismita Craft Studio | Candle Supplies in Kathmandu, Nepal",
+                    "inLanguage": "en-NP",
+                    "isPartOf": {"@id": f"{canonical_base()}/#website"},
+                    "about": {"@id": f"{canonical_base()}/#organization"},
+                    "mainEntity": {"@id": f"{canonical_base()}/#organization"},
+                },
+                local_business_node(),
+            ],
+        },
+    }
     ctx.update(_nav(request))
     return render(request, "storefront/page.html", ctx)
 
 
 def contact(request):
-    ctx = {"title": "Contact Us", "subtitle": "We reply within 1 business day", "items": [],
-           "body": (
-               "<p><b>Address:</b> Narephate - 32, Kathmandu<br>"
-               "<b>Phone:</b> <a href=\"tel:+9779708909514\">+977 970-8909514</a><br>"
-               "<b>WhatsApp:</b> <a href=\"https://wa.me/9779708909514\" target=\"_blank\" rel=\"noopener\">Chat with us on WhatsApp</a></p>"
-           )}
+    page_url = canonical_url(request, "/contact/")
+    contact_description = (
+        "Contact Nismita Craft Studio in Narephate, Kathmandu, Nepal. Call or "
+        "WhatsApp +977 970-8909514 about candle moulds, wax, wicks, colours "
+        "and craft supplies, with delivery across Nepal."
+    )
+    body = (
+        "<p><b>Nismita Craft Studio</b> is a candle-making supplies business at "
+        "<b>Narephate - 32, Kathmandu, Nepal</b>. We supply candle moulds, "
+        "candle wax, candle wicks, mica colours, glitters and related craft "
+        "supplies, and we deliver to customers across Nepal.</p>"
+        "<p><b>Address:</b> Narephate - 32, Kathmandu, Nepal<br>"
+        "<b>Phone:</b> <a href=\"tel:+9779708909514\">+977 970-8909514</a><br>"
+        "<b>WhatsApp:</b> <a href=\"https://wa.me/9779708909514\" target=\"_blank\" "
+        "rel=\"noopener\">Chat with Nismita Craft Studio on WhatsApp</a><br>"
+        "<b>Instagram:</b> <a href=\"https://www.instagram.com/nismita_craft_studio/\" "
+        "target=\"_blank\" rel=\"noopener\">@nismita_craft_studio</a><br>"
+        "<b>TikTok:</b> <a href=\"https://www.tiktok.com/@nismita_craft_studio\" "
+        "target=\"_blank\" rel=\"noopener\">@nismita_craft_studio</a></p>"
+        "<p>Message us before you order if you are unsure which wax, wick or "
+        "mould suits your project, and we will suggest a practical starting "
+        "combination. You can also browse the <a href=\"/shop/\">shop</a> or "
+        "our <a href=\"/category/candle-moulds/\">candle moulds</a> first.</p>"
+    )
+    ctx = {
+        "title": "Contact Nismita Craft Studio",
+        "seo_title": "Contact Nismita Craft Studio | Kathmandu, Nepal",
+        "h1": "Contact Nismita Craft Studio",
+        "subtitle": "Kathmandu, Nepal · phone and WhatsApp orders and enquiries",
+        "seo_description": contact_description,
+        "items": [],
+        "body": body,
+        "page_schema": {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "ContactPage",
+                    "@id": f"{page_url}#webpage",
+                    "url": page_url,
+                    "name": "Contact Nismita Craft Studio | Kathmandu, Nepal",
+                    "inLanguage": "en-NP",
+                    "isPartOf": {"@id": f"{canonical_base()}/#website"},
+                    "about": {"@id": f"{canonical_base()}/#localbusiness"},
+                },
+                local_business_node(),
+            ],
+        },
+    }
     ctx.update(_nav(request))
     return render(request, "storefront/page.html", ctx)
 

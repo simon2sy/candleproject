@@ -4,8 +4,6 @@
 {% block meta_description %}Track your Nismita Craft Studio orders.{% endblock %}
 {% block seo_description %}Track your Nismita Craft Studio orders.{% endblock %}
 {% block seo_robots %}noindex,nofollow{% endblock %}
-{% block structured_data %}{% endblock %}
-{% block extra_schema %}{% endblock %}
 {% block content %}<section class="section">
 <div class="section-head"><div><h1>My Orders 📦</h1><div class="sub">{{ orders|length }} order{{ orders|length|pluralize }} placed</div></div><a class="btn ghost" href="/shop/">Continue shopping</a></div>
 {% for o in orders %}

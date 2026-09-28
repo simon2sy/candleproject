@@ -1,4 +1,5 @@
 from django.contrib.sitemaps import Sitemap
+from django.db.models import Count, Q
 from django.urls import reverse
 
 from catalog.models import Category, Product
@@ -64,14 +65,22 @@ class CategorySitemap(_CanonicalSitemap):
     changefreq = "weekly"
     priority = 0.7
 
+    # Categories are only worth indexing once they actually list products;
+    # an empty or leftover demo category is a thin page with no value.
+    EXCLUDED_SLUGS = {"demo"}
+
     def items(self):
-        # Every active category is an indexable /category/<slug>/ page
-        # (top-level and children all render through the shop view).
-        return (
-            Category.objects.filter(is_active=True)
-            .order_by("slug")
-            .only("slug", "updated_at")
-        )
+        return [
+            c
+            for c in (
+                Category.objects.filter(is_active=True)
+                .exclude(slug__in=self.EXCLUDED_SLUGS)
+                .annotate(active_products=Count("products", filter=Q(products__is_active=True)))
+                .only("slug", "updated_at")
+                .order_by("slug")
+            )
+            if c.active_products > 0
+        ]
 
     def location(self, item):
         return reverse("storefront:category", kwargs={"slug": item.slug})

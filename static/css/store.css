@@ -15,7 +15,7 @@ img{max-width:100%}
 .nav{max-width:1240px;margin:auto;display:flex;align-items:center;gap:22px;padding:12px 20px}
 .brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
 .brand-logo{width:46px;height:46px;border-radius:50%;object-fit:cover;display:block;background:var(--purple);border:2px solid var(--purple-soft)}
-.brand-name{font-weight:800;font-size:17px;letter-spacing:.18em;line-height:1.05}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:.18em;line-height:1.05;text-transform:uppercase}
 .brand-name small{display:block;font-size:8.5px;letter-spacing:.34em;color:var(--purple-deep);font-weight:600;margin-top:2px}
 .menu{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:500}
 .menu a{padding:8px 12px;border-radius:9px;color:#453a5e;white-space:nowrap;transition:.15s}

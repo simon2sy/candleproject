@@ -7,7 +7,7 @@
 {# --- Page title: child templates override seo_title (legacy "title" still works) --- #}
 <title>{% block seo_title %}{% block title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}{% endblock %}</title>
 {# --- Meta description: child templates override seo_description (legacy meta_description still works) --- #}
-<meta name="description" content="{% block seo_description %}{% block meta_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}{% endblock %}">
+<meta name="description" content="{% block seo_description %}{% block meta_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}{% endblock %}">
 {# --- Meta robots: indexable pages default to index,follow; filtered/paginated duplicates noindexed via seo_robots_extra --- #}
 <meta name="robots" content="{% block seo_robots %}{% if seo_robots_extra %}{{ seo_robots_extra }}{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}">
 {# --- Canonical: absolute HTTPS URL on the preferred domain, no query strings --- #}
@@ -16,20 +16,26 @@
 <meta property="og:site_name" content="Nismita Craft Studio">
 <meta property="og:locale" content="en_NP">
 <meta property="og:title" content="{% block og_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}">
-<meta property="og:description" content="{% block og_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}">
 <meta property="og:url" content="{{ canonical_url }}">
-{% block og_image %}<meta property="og:image" content="{{ og_image_default }}">{% endblock %}<meta property="og:image:width" content="800"><meta property="og:image:height" content="600"><meta property="og:image:alt" content="Nismita Craft Studio">
+{% block og_image %}<meta property="og:image" content="{{ og_image_default }}">{% endblock %}<meta property="og:image:width" content="388"><meta property="og:image:height" content="370"><meta property="og:image:alt" content="Nismita Craft Studio logo">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{% block twitter_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}">
-<meta name="twitter:description" content="{% block twitter_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}">
 {% block twitter_image %}<meta name="twitter:image" content="{{ og_image_default }}">{% endblock %}
-{# --- Default Organization + WebSite schema (real info only); pages add their own via extra_schema --- #}
-{% block structured_data %}<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://nismitacraftstudio.com/#organization","name":"Nismita Craft Studio","url":"https://nismitacraftstudio.com/","logo":"https://nismitacraftstudio.com{% static 'img/logo.png' %}","sameAs":["https://www.instagram.com/nismita_craft_studio","https://www.tiktok.com/@nismita_craft_studio"]}]}</script>{% endblock %}
-{% block extra_schema %}{% endblock %}
-<link rel="icon" href="{% static 'img/logo.png' %}">
+{# --- Site-wide Organization + WebSite schema: rendered ONCE here, for every page. --- #}
+{% block site_schema %}<script type="application/ld+json">{{ site_schema|json_ld }}</script>{% endblock %}
+{# --- Page-specific schema (Product, ItemList, Breadcrumb, LocalBusiness...) --- #}
+{% block page_schema %}{% endblock %}
+<link rel="icon" href="{% static 'img/logo.png' %}" type="image/png">
+<link rel="icon" href="{% static 'img/logo.webp' %}" type="image/webp">
+<link rel="apple-touch-icon" href="{% static 'img/logo.png' %}">
+{# --- Fonts load non-render-blocking so the LCP element is not blocked by CSS --- #}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"></noscript>
 <link rel="stylesheet" href="{% static 'css/store.css' %}">
 <style>
 /* Mobile Auth Buttons */
@@ -70,7 +76,7 @@
 </div>
 {% endif %}
 <header class="header" id="siteHeader"><nav class="nav">
-  <a class="brand" href="/"><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="Nismita Craft Studio logo" width="44" height="44"><span class="brand-name">NISMITA<small>CRAFT STUDIO</small></span></a>
+  <a class="brand" href="/"><picture><source srcset="{% static 'img/logo.webp' %}" type="image/webp"><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="Nismita Craft Studio logo" width="44" height="44" decoding="async"></picture><span class="brand-name">Nismita <small>Craft Studio</small></span></a>
   {% if not user.is_staff or request.session.customer_preview %}
   <div class="menu">
     <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a>
@@ -136,18 +142,18 @@
 {% block content %}{% endblock %}
 <footer class="footer"><div class="footer-inner">
   <div class="fcol-brand">
-    <h2>NISMITA CRAFT STUDIO</h2>
-    <p>Handmade candle-making supplies: wax, wicks, silicone molds, colours & glitters.</p>
+    <h2>Nismita Craft Studio</h2>
+    <p>Candle moulds and candle-making supplies in Nepal: wax, wicks, silicone moulds, colours and glitters. Based in Kathmandu, delivering across Nepal.</p>
     <div class="f-social">
-      <a href="https://www.instagram.com/nismita_craft_studio?stkn=ZTMxamYyZ3F1Z3F3" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
-      <a href="https://www.tiktok.com/@nismita_craft_studio?_r=1&amp;_t=ZS-99zarpqtyJZ" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a5.3 5.3 0 0 1-3.77-1.28 5.3 5.3 0 0 1-2.39-3.72h-3.2v12.1a2.55 2.55 0 1 1-1.81-2.46V8.1a5.84 5.84 0 1 0 5.01 5.78V9.01a8.48 8.48 0 0 0 4.88 1.53V7.35a5.32 5.32 0 0 0 1.28-.66z"/></svg></a>
+      <a href="https://www.instagram.com/nismita_craft_studio/" target="_blank" rel="noopener noreferrer" aria-label="Nismita Craft Studio on Instagram" title="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+      <a href="https://www.tiktok.com/@nismita_craft_studio" target="_blank" rel="noopener noreferrer" aria-label="Nismita Craft Studio on TikTok" title="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a5.3 5.3 0 0 1-3.77-1.28 5.3 5.3 0 0 1-2.39-3.72h-3.2v12.1a2.55 2.55 0 1 1-1.81-2.46V8.1a5.84 5.84 0 1 0 5.01 5.78V9.01a8.48 8.48 0 0 0 4.88 1.53V7.35a5.32 5.32 0 0 0 1.28-.66z"/></svg></a>
 
-      <a href="https://wa.me/9779708909514" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.5c-.1.2-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.1.1.7-.1 1.3z"/></svg></a>
+      <a href="https://wa.me/9779708909514" target="_blank" rel="noopener" aria-label="Chat with Nismita Craft Studio on WhatsApp" title="WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.5c-.1.2-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1.9 1.9 1.2 2.2 1.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.1.1.7-.1 1.3z"/></svg></a>
     </div>
   </div>
-  <div><h2>Useful Links</h2><a href="/about/">About Nismita Craft Studio</a><a href="/contact/">Contact Us</a><a href="/shop/">Shop Craft Supplies</a><a href="#">Refund &amp; Returns</a><a href="#">Shipping &amp; Delivery</a></div>
+  <div><h2>Useful Links</h2><a href="/about/">About Nismita Craft Studio</a><a href="/contact/">Contact Us</a><a href="/shop/">Shop Craft Supplies</a></div>
   <div><h2>Candle Moulds &amp; Supplies</h2>{% for c in nav_categories|slice:":6" %}<a href="/category/{{ c.slug }}/">{{ c.name }}</a>{% endfor %}<a href="/shop/">Shop all supplies</a></div>
-  <div><h2>Contact Us</h2><a href="https://maps.google.com/?q=Narephate-32,Kathmandu" target="_blank" rel="noopener">📍 Narephate - 32, Kathmandu</a><a href="tel:+9779708909514">📞 +977 970-8909514</a><a href="https://wa.me/9779708909514" target="_blank" rel="noopener">💬 Chat on WhatsApp</a></div>
+  <div><h2>Contact Us</h2><a href="https://maps.google.com/?q=Narephate-32,Kathmandu" target="_blank" rel="noopener">📍 Narephate - 32, Kathmandu, Nepal</a><a href="tel:+9779708909514">📞 +977 970-8909514</a><a href="https://wa.me/9779708909514" target="_blank" rel="noopener">💬 Chat on WhatsApp</a></div>
 </div><div class="copy">Copyright © 2026 Nismita Craft Studio. All Rights Reserved. · Designed By TrustNepalTechnologies(TNT)</div></footer>
 <button class="to-top" id="toTop" aria-label="Back to top">↑</button>
 <script>

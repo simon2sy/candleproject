@@ -2,7 +2,7 @@
 <div class="card">
   <div class="card-media">
     <a href="/product/{{ p.slug }}/" aria-label="{{ p.name }} - Nismita Craft Studio">
-      {% with img=p.primary_image %}{% if img and img.image %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:p.name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="400" height="400" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">{% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ p.name }} — photo coming soon - Nismita Craft Studio" loading="lazy" decoding="async" width="400" height="400">{% endif %}{% endwith %}
+      {% with img=p.primary_image %}{% if img and img.image %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:p.name }}" loading="lazy" decoding="async" width="400" height="400" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">{% else %}<img src="{% static 'img/product-placeholder.svg' %}" alt="{{ p.name }} — product photo coming soon" loading="lazy" decoding="async" width="400" height="400">{% endif %}{% endwith %}
     </a>
     {% if p.stock_quantity == 0 %}<span class="ribbon out">Out of stock</span>{% elif p.compare_at_price %}<span class="ribbon save">-{{ p.discount_percent }}%</span>{% endif %}
     {# POST (not GET): adding to the wishlist changes state and needs the CSRF token. #}
@@ -13,7 +13,7 @@
     <h3><a href="/product/{{ p.slug }}/">{{ p.name }}</a></h3>
     <div class="price">Rs {{ p.price|floatformat:2 }}{% if p.compare_at_price %}<s>Rs {{ p.compare_at_price|floatformat:2 }}</s>{% endif %}</div>
     <div class="badges">
-      {% if p.is_featured %}<span class="badge">★ Bestseller</span>{% endif %}
+      {% if p.is_featured %}<span class="badge">★ Featured</span>{% endif %}
       {% for t in p.tags.all|slice:":2" %}<span class="badge">{{ t.name }}</span>{% endfor %}
       {% if p.compare_at_price %}<span class="badge save">Save {{ p.discount_percent }}%</span>{% endif %}
     </div>

@@ -101,6 +101,16 @@ else:
 # sitemap locations and JSON-LD. Defaults to the production domain.
 SEO_CANONICAL_DOMAIN = os.getenv("SEO_CANONICAL_DOMAIN", "nismitacraftstudio.com").strip().lower() or "nismitacraftstudio.com"
 SEO_SITE_URL = os.getenv("SEO_SITE_URL", f"https://{SEO_CANONICAL_DOMAIN}").strip().rstrip("/") or f"https://{SEO_CANONICAL_DOMAIN}"
+# Never echo a local request host into canonical/OG/sitemap/JSON-LD URLs.
+# Set SEO_ALLOW_DEV_HOSTS=true only for a local preview tunnel.
+SEO_ALLOW_DEV_HOSTS = os.getenv("SEO_ALLOW_DEV_HOSTS", "false").strip().lower() in ("1", "true", "yes")
+
+# The www host must be *accepted* so CanonicalDomainMiddleware can answer it
+# with a single 301 to the canonical (non-www) domain instead of a 400.
+# It is never linked to, never in the sitemap and always canonicalised away.
+_www_alias = f"www.{SEO_CANONICAL_DOMAIN}"
+if _www_alias not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS = sorted({*ALLOWED_HOSTS, _www_alias})
 
 # --- Environment guard --------------------------------------------------------
 # Declare the deployment environment explicitly (ENVIRONMENT=production on the
@@ -146,6 +156,7 @@ MIDDLEWARE = [
 "corsheaders.middleware.CorsMiddleware",
 "django.middleware.security.SecurityMiddleware",
 "whitenoise.middleware.WhiteNoiseMiddleware",
+"storefront.middleware.CanonicalDomainMiddleware",
 "django.contrib.sessions.middleware.SessionMiddleware",
 "django.middleware.common.CommonMiddleware",
 "django.middleware.csrf.CsrfViewMiddleware",

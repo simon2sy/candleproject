@@ -21,7 +21,7 @@ SECRET_KEY=<long random value>
 DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DATABASE
 # Himalayan Host MySQL alternative:
 # DATABASE_URL=mysql://USER:PASSWORD@localhost:3306/DATABASE
-ALLOWED_HOSTS=shop.example.com
+ALLOWED_HOSTS=nismitacraftstudio.com,www.nismitacraftstudio.com
 CORS_ALLOWED_ORIGINS=https://admin.example.com
 CSRF_TRUSTED_ORIGINS=https://shop.example.com
 TRUST_PROXY_HEADERS=true  # only when behind a trusted HTTPS reverse proxy
@@ -30,6 +30,27 @@ SHIPPING_FLAT=150
 DATABASE_CONN_MAX_AGE=60
 DATABASE_CONNECT_TIMEOUT=5
 ```
+
+## SEO configuration
+
+Canonical, Open Graph, sitemap and JSON-LD URLs are always built from the
+canonical domain — they are never generated from the incoming request host:
+
+```text
+SEO_CANONICAL_DOMAIN=nismitacraftstudio.com
+SEO_SITE_URL=https://nismitacraftstudio.com
+# Keep false in production. Only enable for a local preview tunnel.
+SEO_ALLOW_DEV_HOSTS=false
+```
+
+* `SEO_CANONICAL_DOMAIN` must be the **non-www** host. `www.` is permanently
+  redirected to it by `storefront.middleware.CanonicalDomainMiddleware`, and
+  is added to `ALLOWED_HOSTS` automatically so the redirect can be served
+  instead of a 400.
+* The web server (or Cloudflare) should additionally 301 `http://` to
+  `https://`; Django's `SECURE_SSL_REDIRECT` does this when `DEBUG=False`.
+* Do not set `SEO_ALLOW_DEV_HOSTS=true` on the production host: it would let a
+  local request host leak into canonical URLs.
 
 `DATABASE_URL` is required when `DEBUG=False`; production cannot silently fall
 back to SQLite. Use a managed PostgreSQL database with automated backups.
@@ -41,6 +62,7 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 python manage.py check --deploy
 python manage.py test tests
+python manage.py test storefront   # SEO regression suite
 ```
 
 Serve with a production WSGI/ASGI server behind HTTPS. Do not use Django's

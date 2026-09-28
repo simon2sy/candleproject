@@ -6,8 +6,9 @@
 {% block og_title %}Page Not Found | Nismita Craft Studio{% endblock %}
 {% block twitter_title %}Page Not Found | Nismita Craft Studio{% endblock %}
 {% block seo_robots %}noindex,nofollow{% endblock %}
-{% block structured_data %}{% endblock %}
-{% block extra_schema %}{% endblock %}
+{# Error pages carry no structured data at all. #}
+{% block site_schema %}{% endblock %}
+{% block page_schema %}{% endblock %}
 {% block content %}<section class="section" style="max-width:640px;margin:0 auto;text-align:center">
 <div class="breadcrumb"><a href="/">Home</a> / Page not found</div>
 <h1>Page not found (404)</h1>

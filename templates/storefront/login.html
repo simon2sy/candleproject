@@ -6,13 +6,11 @@
 {% block og_title %}Sign In | Nismita Craft Studio{% endblock %}
 {% block twitter_title %}Sign In | Nismita Craft Studio{% endblock %}
 {% block seo_robots %}noindex,nofollow{% endblock %}
-{% block structured_data %}{% endblock %}
-{% block extra_schema %}{% endblock %}
 {% block content %}
 <div style="padding:0 20px"><div class="auth-wrap">
   <div class="auth-side">
     <img src="{% static 'img/logo.png' %}" alt="Nismita Craft Studio logo" width="72" height="72" loading="lazy" decoding="async">
-    <div class="eyebrow" style="background:#fff;color:var(--purple-dark);align-self:flex-start">NISMITA CRAFT STUDIO</div>
+    <div class="eyebrow" style="background:#fff;color:var(--purple-dark);align-self:flex-start">Nismita Craft Studio</div>
     <h2>Welcome back, maker.</h2>
     <p>Sign in to sync your cart, wishlist & orders across devices. Your saved cart merges automatically after login.</p>
     <ul><li>🛒 Persistent cart — login required to buy</li><li>♡ Wishlist & order history</li><li>🚚 Dispatch in 5–6 working days</li></ul>
@@ -29,7 +27,7 @@
       <div class="auth-meta"><label><input type="checkbox" name="remember" checked> Remember me</label><a href="/register/">Forgot password?</a></div>
       <button class="btn auth-btn" type="submit">Sign In →</button>
     </form>
-    <div class="auth-alt">New to Nismita? <a href="/register/{% if next %}?next={{ next }}{% endif %}">Create an account</a></div>
+    <div class="auth-alt">New to Nismita Craft Studio? <a href="/register/{% if next %}?next={{ next }}{% endif %}">Create an account</a></div>
     <div class="auth-alt" style="margin-top:8px">Store admin? <a href="/admin/login/">Go to supplier / admin login →</a></div>
   </div>
 </div></div>

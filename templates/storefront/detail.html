@@ -1,22 +1,22 @@
 {% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load storefront_tags %}{% load seo_tags %}
-{% block title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
-{% block seo_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block title %}{{ product.name }} | Nismita Craft Studio Nepal{% endblock %}
+{% block seo_title %}{{ product.name }} | Nismita Craft Studio Nepal{% endblock %}
 {% block meta_description %}{{ product_seo_description }}{% endblock %}
 {% block seo_description %}{{ product_seo_description }}{% endblock %}
 {% block og_type %}product{% endblock %}
-{% block og_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block og_title %}{{ product.name }} | Nismita Craft Studio Nepal{% endblock %}
 {% block og_description %}{{ product_seo_description }}{% endblock %}
-{% block twitter_title %}{{ product.name }} | Nismita Craft Studio{% endblock %}
+{% block twitter_title %}{{ product.name }} | Nismita Craft Studio Nepal{% endblock %}
 {% block twitter_description %}{{ product_seo_description }}{% endblock %}
 {% with seo_img=product.primary_image %}
   {% block og_image %}<meta property="og:image" content="{% if seo_img and seo_img.image %}{{ product_seo_image_url }}{% else %}{{ og_image_default }}{% endif %}">{% endblock %}
   {% block twitter_image %}<meta name="twitter:image" content="{% if seo_img and seo_img.image %}{{ product_seo_image_url }}{% else %}{{ og_image_default }}{% endif %}">{% endblock %}
 {% endwith %}
-{% block structured_data %}
+{% block page_schema %}
 <script type="application/ld+json">{{ product_seo_schema|json_ld }}</script>
 {% endblock %}
 {% block content %}
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
 <style>
 :root{--primary:#6366f1;--primary-light:#818cf8;--primary-dark:#4f46e5;--success:#10b981;--success-light:#d1fae5;--warning:#f59e0b;--warning-light:#fef3c7;--danger:#ef4444;--danger-light:#fee2e2;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#1e293b;--text-muted:#64748b;--shadow:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.12);--radius:12px;--transition:all .2s ease}
 .pdp{background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -157,9 +157,6 @@
 <div class="pdp-breadcrumb">
   <a href="/">Home</a> / <a href="/shop/">Shop</a> / <a href="/category/{{ product.category.slug }}/">{{ product.category.name }}</a> / {{ product.name }}
 </div>
-{% block extra_schema %}
-<script type="application/ld+json">{{ breadcrumb_schema|json_ld }}</script>
-{% endblock %}
 
 <div class="pdp-inner">
   <!-- Gallery -->
@@ -167,9 +164,9 @@
     <div class="pdp-main-image" id="mainImage">
       {% with img=product.primary_image %}
         {% if img and img.image %}
-          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }} - Nismita Craft Studio" id="mainImg" width="600" height="600" fetchpriority="high" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" id="mainImg" width="600" height="600" fetchpriority="high" onerror="this.onerror=null;this.src='{% static 'img/product-placeholder.svg' %}';">
         {% else %}
-          <img src="{% static 'img/product-placeholder.svg' %}" alt="{{ product.name }} — photo coming soon - Nismita Craft Studio" id="mainImg" width="600" height="600" fetchpriority="high">
+          <img src="{% static 'img/product-placeholder.svg' %}" alt="{{ product.name }} — product photo coming soon" id="mainImg" width="600" height="600" fetchpriority="high">
         {% endif %}
       {% endwith %}
       {% if product.images.all|length > 1 %}
@@ -179,7 +176,7 @@
     <div class="pdp-thumbnails">
       {% for im in product.images.all %}
         <div class="pdp-thumb {% if im == product.primary_image %}active{% endif %}" data-image-src="{{ im.image.url }}" data-image-number="{{ forloop.counter }}" tabindex="0" role="button" onclick="changeImage(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();changeImage(this)}">
-          <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }} - Nismita Craft Studio" loading="lazy" decoding="async" width="72" height="72">
+          <img src="{{ im.image.url }}" alt="{{ im.alt_text|default:product.name }}" loading="lazy" decoding="async" width="72" height="72">
         </div>
       {% endfor %}
     </div>

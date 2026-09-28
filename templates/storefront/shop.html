@@ -1,26 +1,30 @@
 {% extends "storefront/base.html" %}{% load static %}{% load seo_tags %}
-{% block title %}{{ category.name }} | Nismita Craft Studio{% endblock %}
-{% block seo_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block seo_title %}{{ seo_title }}{% endblock %}
 {% block meta_description %}{{ category_seo_description }}{% endblock %}
 {% block seo_description %}{{ category_seo_description }}{% endblock %}
-{% block og_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block og_title %}{{ seo_title }}{% endblock %}
 {% block og_description %}{{ category_seo_description }}{% endblock %}
-{% block twitter_title %}{% if category %}{{ category.name }} | Nismita Craft Studio{% else %}Shop Craft Supplies in Nepal | Nismita Craft Studio{% endif %}{% endblock %}
+{% block twitter_title %}{{ seo_title }}{% endblock %}
 {% block twitter_description %}{{ category_seo_description }}{% endblock %}
 {% block og_type %}website{% endblock %}
 {% block seo_robots %}{% if seo_robots_extra %}{{ seo_robots_extra }}{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
-{% block structured_data %}
-<script type="application/ld+json">{{ category_schema|json_ld }}</script>
-{% endblock %}
+{% block page_schema %}<script type="application/ld+json">{{ category_schema|json_ld }}</script>{% endblock %}
 {% block content %}<section class="section">
 <div class="breadcrumb"><a href="/">Home</a> / {% if category %}<a href="/shop/">Shop</a> / {{ category.name }}{% else %}Shop{% endif %}</div>
 <div class="section-head">
   <div>
-    <h1>{% if category %}{{ category.name }}{% else %}Shop All Supplies{% endif %}</h1>
-    <div class="sub">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }} · filter by category, price or keyword</div>
+    <h1>{{ h1 }}</h1>
+    <div class="sub">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }} available{% if category %} in {{ category.name }}{% endif %} · delivered across Nepal</div>
   </div>
-  <span class="count-pill">{{ products.paginator.count }} item{{ products.paginator.count|pluralize }}</span>
+  {% if category %}<span class="count-pill">{{ products.paginator.count }} item{{ products.paginator.count|pluralize }}</span>{% endif %}
 </div>
+
+{# --- Unique, useful intro copy for this category (not keyword stuffing) --- #}
+{% if intro_html %}<div class="about-content" data-reveal>{{ intro_html|safe }}
+{% for heading, body in sections %}<h3>{{ heading }}</h3>{{ body|safe }}{% endfor %}
+{% if shipping_note %}<p><small>{{ shipping_note }}</small></p>{% endif %}
+</div>{% endif %}
 
 <div class="chips" data-reveal>
   <a class="chip {% if not category %}active{% endif %}" href="/shop/">All supplies</a>

@@ -4,8 +4,6 @@
 {% block meta_description %}Order {{ order.order_number }} confirmation from Nismita Craft Studio.{% endblock %}
 {% block seo_description %}Order {{ order.order_number }} confirmation from Nismita Craft Studio.{% endblock %}
 {% block seo_robots %}noindex,nofollow{% endblock %}
-{% block structured_data %}{% endblock %}
-{% block extra_schema %}{% endblock %}
 {% block content %}<section class="section" style="max-width:760px">
 <div class="alert" style="border-left:4px solid #2e9e5b">✅ <b>Order placed: {{ order.order_number }}</b> — status: <b>{{ order.get_status_display }}</b></div>
 {% if order.payment_status == 'VERIFIED' %}

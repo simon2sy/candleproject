@@ -1,15 +1,13 @@
 {% extends "storefront/base.html" %}{% load static %}{% load currency %}{% load seo_tags %}
 {% block title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
 {% block seo_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
-{% block meta_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
-{% block seo_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
+{% block meta_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}
+{% block seo_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}
 {% block og_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
-{% block og_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
+{% block og_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}
 {% block twitter_title %}Nismita Craft Studio | Candle Moulds & Craft Supplies in Nepal{% endblock %}
-{% block twitter_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours & craft supplies in Nepal. Shop quality materials online with delivery across Nepal.{% endblock %}
-{% block structured_data %}
-<script type="application/ld+json">{{ homepage_schema|json_ld }}</script>
-{% endblock %}
+{% block twitter_description %}Nismita Craft Studio offers candle moulds, wax, wicks, colours and craft supplies in Nepal. Shop candle-making materials online with delivery across Nepal.{% endblock %}
+{% block page_schema %}<script type="application/ld+json">{{ homepage_schema|json_ld }}</script>{% endblock %}
 {% block content %}
 <style>
 /* Owner photo hero — clean, personal, brand-forward */
@@ -53,9 +51,9 @@
 </style>
 <section class="hero"><div class="hero-inner">
   <div>
-    <span class="eyebrow">NISMITA CRAFT STUDIO</span>
+    <span class="eyebrow">Nismita Craft Studio · Kathmandu, Nepal</span>
     <h1>Nismita Craft Studio</h1>
-    <p class="hero-subtitle">Candle moulds &amp; craft supplies in Nepal — from blending the wax to packing your parcel, every order gets my personal touch.</p>
+    <p class="hero-subtitle">Nismita Craft Studio is a Kathmandu-based candle-making supplies business. We supply candle moulds, candle wax, candle wicks, mica colours and glitters to candle makers across Nepal, delivered from Kathmandu — and from blending the wax to packing your parcel, every order gets a personal touch.</p>
     <blockquote class="hero-quote">“I test every wax, wick, colour and mold myself — if it isn't good enough for my own candles, it never reaches your studio.”<cite>— Sumita Basel · Founder &amp; Maker</cite></blockquote>
     <div class="hero-cta"><a class="btn" href="/shop/">Go to Shop</a><a class="btn ghost" href="/about/">Learn more about us</a></div>
     <ul class="hero-points">
@@ -71,18 +69,14 @@
     <div class="oh-name">SUMITA BASEL<small>FOUNDER · CANDLE MAKER</small></div>
     <p class="oh-tag">“From blending the wax to packing your parcel, every order gets my personal touch.”</p>
     <ul class="oh-chips">
-      <li><a href="/category/candle-wax/">🕯️ Soy Wax</a></li>
-      <li><a href="/category/candle-wick/">🧵 Cotton Wicks</a></li>
-      <li><a href="/category/candle-molds/">🍮 Silicone Molds</a></li>
-      <li><a href="/category/colours-glitters/">🎨 Mica Colours</a></li>
-      <li><a href="/category/colours-glitters/">✨ Glitter</a></li>
+      {% for c in nav_categories %}<li><a href="/category/{{ c.slug }}/">{{ c.name }}</a></li>{% endfor %}
     </ul>
-    <div class="oh-foot"><span>✓ Verified supplier</span><span>🚚 5–6 day dispatch</span><span>↩️ 7-day returns</span></div>
+    <div class="oh-foot"><span>📍 Kathmandu, Nepal</span><span>🚚 5–6 day dispatch</span><span>↩️ 7-day returns</span></div>
   </div>
 </div></section>
 <div class="notice" data-reveal>Order dispatch update: All orders will be shipped within 5-6 working days once confirmed. Delivery timelines may vary by location and courier partner.</div>
 <section class="section" data-reveal>
-  <div class="section-head"><div><h2>Featured Products</h2><div class="sub">Handpicked bestsellers this week</div></div><a class="see-all" href="/shop/?ordering=-price">Browse all →</a></div>
+  <div class="section-head"><div><h2>Featured Products</h2><div class="sub">A handpicked selection from the current catalogue</div></div><a class="see-all" href="/shop/">Browse all →</a></div>
   <div class="grid">{% for p in featured %}{% include "storefront/_card.html" with p=p %}{% empty %}<div class="empty"><div class="empty-ico">🕯️</div><h3>Nothing featured right now</h3><p>Check back soon — new candle-making supplies land every week.</p><a class="btn" href="/shop/">Browse all products →</a></div>{% endfor %}</div>
 </section>
 <section class="section" data-reveal>
@@ -90,9 +84,19 @@
   <div class="grid">{% for p in latest %}{% include "storefront/_card.html" with p=p %}{% empty %}<p>No products yet.</p>{% endfor %}</div>
 </section>
 <section class="trust-strip" data-reveal><div class="trust-inner">
-  <div class="trust-item"><span>🎨</span><b>Maker-grade quality</b><p>Mica colours, soy wax and molds tested for a clean, even pour.</p></div>
+  <div class="trust-item"><span>🎨</span><b>Maker-grade quality</b><p>Mica colours, soy wax and silicone moulds checked before they are packed.</p></div>
   <div class="trust-item"><span>🚚</span><b>Fast dispatch</b><p>Confirmed orders leave the studio within 5–6 working days.</p></div>
   <div class="trust-item"><span>💬</span><b>Order on WhatsApp</b><p>Send your payment screenshot — we verify and confirm quickly.</p></div>
   <div class="trust-item"><span>↩️</span><b>Easy 7-day returns</b><p>Damaged or wrong item? We replace or refund it.</p></div>
 </div></section>
+{# --- Crawlable, factual explanation of the business + internal linking ---- #}
+<section class="section" data-reveal>
+  <h2>Candle moulds &amp; candle making supplies in Nepal</h2>
+  <p>Nismita Craft Studio supplies candle moulds and the other materials a candle maker needs: candle wax, candle wicks, mica colours, glitters and small tools. We are based in Narephate, Kathmandu, and we dispatch confirmed orders to customers in Kathmandu and in every other province of Nepal.</p>
+  <p>Browse by what you are making:</p>
+  <ul>
+    {% for c in all_categories %}<li><a href="/category/{{ c.slug }}/">{{ c.name }}</a> — available from Nismita Craft Studio, Kathmandu.</li>{% empty %}<li><a href="/shop/">Shop all craft supplies</a></li>{% endfor %}
+  </ul>
+  <p>Not sure which wax, wick or mould suits your project? <a href="/contact/">Send us a message</a> and we will suggest a practical starting combination. You can also read more about how to choose and use each material on the category pages, or learn <a href="/about/">about Nismita Craft Studio</a>.</p>
+</section>
 {% endblock %}

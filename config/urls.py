@@ -29,6 +29,9 @@ def robots_txt(request):
     lines = [
         "User-agent: *",
         "Allow: /",
+        # Static assets and product images must stay crawlable.
+        "Allow: /static/",
+        "Allow: /media/products/",
         "Disallow: /admin/",
         "Disallow: /dashboard/",
         "Disallow: /cart/",
@@ -41,6 +44,10 @@ def robots_txt(request):
         "Disallow: /logout/",
         "Disallow: /payment/",
         "Disallow: /api/",
+        "Disallow: /*?search=",
+        "Disallow: /*?min_price=",
+        "Disallow: /*?max_price=",
+        "Disallow: /*?ordering=",
         "",
         f"Sitemap: {canonical_base()}/sitemap.xml",
     ]
