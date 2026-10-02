@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView
 
 from config.permissions import IsAdmin
+
 from .models import Address, SellerProfile
 from .serializers import AddressSerializer, RegisterSerializer, SellerProfileSerializer, UserSerializer
 
@@ -96,11 +97,11 @@ class SellerProfileViewSet(viewsets.ModelViewSet):
         )
         try:
             instance.delete()
-        except ProtectedError:
+        except ProtectedError as exc:
             raise ValidationError(
                 {
                     "detail": "This seller still has products. Re-assign or delete "
                     "those products before deleting the profile."
                 }
-            )
+            ) from exc
 

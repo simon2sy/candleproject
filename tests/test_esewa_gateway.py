@@ -56,11 +56,11 @@ class InitiateTests(TestCase):
     def _order(self):
         from decimal import Decimal
 
-        class O:  # minimal duck-typed order
+        class FakeOrder:  # minimal duck-typed order
             order_number = "ORD-TEST123"
             total = Decimal("1500.00")
 
-        return O()
+        return FakeOrder()
 
     def test_initiate_requires_credentials(self):
         self.gw.merchant_id = ""

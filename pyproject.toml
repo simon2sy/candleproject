@@ -1,0 +1,70 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+    "venv",
+    ".venv",
+    "staticfiles",
+    "media",
+    "private_media",
+    ".kilo",
+]
+
+[tool.ruff.lint]
+# Start with the high-signal rule sets. Widen this once the codebase is clean.
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "DJ",   # flake8-django
+    "UP",   # pyupgrade
+]
+ignore = [
+    # Django models legitimately use long lines and legacy patterns.
+    "E501",   # line-too-long — handled by the formatter
+    "B008",   # function-call-in-default-argument (Django/DRF idiom)
+    "UP038",  # non-pep604-isinstance — isinstance(x, (a, b)) is still common
+    # Reformatting: these are pre-existing stylistic choices, not defects.
+    "UP031",  # percent-format — used intentionally in regex assertions
+    "UP032",  # f-string over .format()
+    "UP009",  # utf-8 coding header — not needed on Python 3
+]
+
+[tool.ruff.lint.isort]
+# These are local packages, so they sort after the third-party block.
+known-first-party = ["accounts", "catalog", "orders", "storefront", "config"]
+known-local-folder = ["accounts", "catalog", "orders", "storefront", "config"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use long fixtures, magic numbers and bare asserts.
+"tests/*" = ["E501", "B011", "DJ008"]
+"*/migrations/*" = ["E501", "F401", "I001"]
+"*/tests.py" = ["E501", "F401", "F811"]
+"*/tests_seo.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.coverage.run]
+branch = true
+source = ["accounts", "catalog", "orders", "storefront", "config"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "manage.py",
+    "*/wsgi.py",
+    "*/asgi.py",
+]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

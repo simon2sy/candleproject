@@ -7,7 +7,7 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def esewa_form(context, order):
     """Render the auto-submitting eSewa form HTML for ``order``."""
-    from orders.gateways import get_gateway, gateway_ready
+    from orders.gateways import gateway_ready, get_gateway
 
     request = context["request"]
     gateway = get_gateway("ESEWA")

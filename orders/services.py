@@ -4,11 +4,9 @@ Consumed by both the storefront checkout and the DRF OrderViewSet so the
 oversell protection is the same code path in both places.
 """
 from decimal import Decimal
-from typing import List, Tuple
 
-from django.db import models, transaction
 from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.db import models, transaction
 
 from catalog.models import Product, ProductVariant
 from orders.models import Cart, CartItem, Order, OrderItem
@@ -33,7 +31,7 @@ def _display_price(item: CartItem) -> Decimal:
     return item.product.price
 
 
-def _reserve_stock(items: List[Tuple[Product, CartItem]], order_num: str):
+def _reserve_stock(items: list[tuple[Product, CartItem]], order_num: str):
     """Lock + validate + decrement stock for every cart item inside an atomic block.
 
     Uses select_for_update on the row being decremented so two concurrent
@@ -82,7 +80,7 @@ def _reserve_stock(items: List[Tuple[Product, CartItem]], order_num: str):
             )
 
 
-def place_order_from_cart(cart: Cart, cart_items: List[CartItem], customer, order_num: str,
+def place_order_from_cart(cart: Cart, cart_items: list[CartItem], customer, order_num: str,
                           shipping_cost: Decimal = Decimal("0"), discount: Decimal = Decimal("0"),
                           payment_method: str = "", payment_reference: str = "",
                           whatsapp_number: str = "",

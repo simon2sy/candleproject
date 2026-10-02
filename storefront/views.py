@@ -2,7 +2,6 @@
 import json
 import logging
 import uuid
-from decimal import Decimal
 from urllib.parse import quote
 
 from django.conf import settings
@@ -10,10 +9,10 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.db import IntegrityError, models, transaction
-from django.db.models import Count, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q
 from django.http import FileResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -25,6 +24,10 @@ from django.views.decorators.http import require_POST
 from accounts.models import Address, User
 from catalog.models import Category, Product, ProductVariant
 from config.ratelimit import AttemptLimiter, client_ip
+from orders.gateways import TransactionResult, gateway_ready, get_gateway
+from orders.models import Cart, CartItem, Order, Wishlist, WishlistItem
+from orders.services import InsufficientStock, place_order_from_cart
+from orders.validators import validate_payment_screenshot
 from storefront.seo import (
     BRAND_NAME,
     absolute_url,
@@ -33,12 +36,8 @@ from storefront.seo import (
     local_business_node,
 )
 from storefront.seo_content import category_seo
-from orders.gateways import TransactionResult, gateway_ready, get_gateway
-from orders.models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
-from orders.services import InsufficientStock, _display_price, place_order_from_cart
-from orders.validators import validate_payment_screenshot
 
-from .nepal import PROVINCES, PROVINCE_CHOICES
+from .nepal import PROVINCE_CHOICES, PROVINCES
 
 logger = logging.getLogger(__name__)
 

@@ -43,11 +43,11 @@ class PaymentScreenshotValidator:
             file.seek(0)
             Image.open(file).verify()
             file.seek(0)
-        except Exception:
+        except Exception as exc:
             raise ValidationError(
                 "Screenshot file is not a valid image.",
                 code=self.code,
-            )
+            ) from exc
 
     def __eq__(self, other):
         return isinstance(other, PaymentScreenshotValidator)

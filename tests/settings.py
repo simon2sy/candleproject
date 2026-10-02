@@ -1,5 +1,4 @@
 """Test database setup and configuration."""
-import os
 from pathlib import Path
 
 # Use SQLite in-memory for tests (faster than PostgreSQL)

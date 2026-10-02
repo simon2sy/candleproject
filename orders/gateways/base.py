@@ -7,7 +7,6 @@ same integration.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 
 @dataclass
@@ -15,11 +14,11 @@ class TransactionResult:
     """What a gateway returns after initiating or verifying a payment."""
 
     ok: bool
-    transaction_id: Optional[str] = None
-    amount: Optional[int] = None  # paisa / smallest currency unit
-    status: Optional[str] = None
-    raw: Optional[Dict] = None
-    error: Optional[str] = None
+    transaction_id: str | None = None
+    amount: int | None = None  # paisa / smallest currency unit
+    status: str | None = None
+    raw: dict | None = None
+    error: str | None = None
 
 
 class PaymentGateway(ABC):
@@ -35,14 +34,14 @@ class PaymentGateway(ABC):
         """Return the URL to redirect the customer to for payment."""
 
     @abstractmethod
-    def verify(self, params: Dict[str, str]) -> TransactionResult:
+    def verify(self, params: dict[str, str]) -> TransactionResult:
         """Verify a callback / redirect from the provider.
 
         ``params`` are the query-string or form POST values eSewa/provider
         sends back.  Returns a ``TransactionResult``.
         """
 
-    def webhook(self, body: Dict, signature: Optional[str] = None) -> TransactionResult:
+    def webhook(self, body: dict, signature: str | None = None) -> TransactionResult:
         """Optional: handle a server-to-server webhook notification.
 
         The default implementation delegates to ``verify``.  Override for

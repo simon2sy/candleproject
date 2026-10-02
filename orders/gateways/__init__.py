@@ -14,7 +14,6 @@ Gateways without credentials (or not implemented yet) return ``None`` /
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from orders.gateways.base import PaymentGateway, TransactionResult
 
@@ -37,13 +36,13 @@ if EsewaGateway is not None:
 # _REGISTRY["KHALTI"] = KhaltiGateway
 
 
-def get_gateway(label: str) -> Optional[PaymentGateway]:
+def get_gateway(label: str) -> PaymentGateway | None:
     """Return a fresh gateway instance for ``label``, or ``None`` if unknown."""
     cls = _REGISTRY.get((label or "").strip().upper())
     return cls() if cls else None
 
 
-def gateway_ready(gateway: Optional[PaymentGateway]) -> bool:
+def gateway_ready(gateway: PaymentGateway | None) -> bool:
     """True when the gateway has its required credentials configured."""
     if gateway is None:
         return False

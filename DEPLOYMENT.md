@@ -76,6 +76,21 @@ Serve with a production WSGI/ASGI server behind HTTPS. Do not use Django's
 - Block dotfiles, source files, `.env`, and backup files.
 - Forward the client IP and the original HTTPS protocol only from a trusted proxy.
 - Set request/body/upload limits at the proxy as an additional layer.
+## Automated deployment
+
+Since this commit, `git push origin main` deploys automatically: CI runs the
+test suite first, and only a green build is released to the server over SSH.
+
+See **[CI_CD.md](CI_CD.md)** for the one-time setup (deploy key, repository
+secrets, server authorisation) and troubleshooting.
+
+Quick reference:
+
+```bash
+git push origin main                                   # CI, then auto-deploy
+```
+
+## Release commands
 
 ## Health checks
 

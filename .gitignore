@@ -1,18 +1,56 @@
-venv/
-.env
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtualenv
+venv/
+.venv/
+ENV/
+env/
+
+# Django
+*.log
 db.sqlite3
+db.sqlite3-journal
 media/
 private_media/
 staticfiles/
-logs/
-*.log
+
+# Secrets — never commit real values, only .env.example
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!.github/known_hosts.example
+
+# Test / coverage artefacts
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
+.tox/
+
+# Editors and OS
 .vscode/
 .idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Virtualenvs and tooling caches
+.mypy_cache/
+.ruff_cache/
+
+# Local scratch
 tmp/
 .kilo/
+.freebuff/
+logs/

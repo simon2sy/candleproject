@@ -1,8 +1,9 @@
 """Users, registration, seller approval tests."""
-from accounts.models import SellerProfile, User
-from catalog.models import Category
 from django.test import TestCase
 from rest_framework.test import APIClient
+
+from accounts.models import SellerProfile, User
+from catalog.models import Category
 
 from .helpers import login, make_seller
 

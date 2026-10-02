@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from accounts.models import SellerProfile
-from catalog.models import Category, Product, ProductImage
+from catalog.models import Category, Product
 
 
 @override_settings(SEO_CANONICAL_DOMAIN="nismitacraftstudio.com")

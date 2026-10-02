@@ -1,11 +1,12 @@
 """Checkout and oversell protection tests (storefront)."""
 from decimal import Decimal
+
 from django.test import TestCase
 
 from catalog.models import Category, Product
 from orders.models import Order
+from tests.checkout import add_to_cart, checkout_payload, fake_png, oversized_png, valid_png
 from tests.helpers import make_seller, make_user
-from tests.checkout import checkout_payload, valid_png, oversized_png, fake_png, add_to_cart
 
 
 class CheckoutOversellTest(TestCase):

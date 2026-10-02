@@ -2,14 +2,14 @@
 import uuid
 
 from django.conf import settings
-from django.db import transaction
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from catalog.models import Product, ProductVariant
-from .models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
+
+from .models import Cart, CartItem, Order, Wishlist, WishlistItem
 from .serializers import CartSerializer, OrderSerializer, WishlistItemSerializer, WishlistSerializer
 from .services import InsufficientStock, place_order_from_cart
 
@@ -91,7 +91,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 landmark=serializer.validated_data.get("landmark", ""),
             )
         except InsufficientStock as exc:
-            raise ValidationError(str(exc))
+            raise ValidationError(str(exc)) from exc
 
         serializer.instance = order
 

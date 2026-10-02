@@ -26,12 +26,10 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import html
 import hmac
-import json
+import html
 import logging
 import os
-from typing import Dict, Optional
 
 from orders.gateways.base import PaymentGateway, TransactionResult
 
@@ -68,7 +66,7 @@ class EsewaGateway(PaymentGateway):
     # signed_field_names=value string, then base64-encode the digest)
     # ------------------------------------------------------------------
 
-    def _make_signature(self, fields: Dict[str, str]) -> str:
+    def _make_signature(self, fields: dict[str, str]) -> str:
         message = ",".join(
             f"{name}={fields[name]}" for name in SIGNED_FIELD_NAMES.split(",")
         )
@@ -80,7 +78,7 @@ class EsewaGateway(PaymentGateway):
         return base64.b64encode(digest).decode("ascii")
 
     @staticmethod
-    def _check_signature(fields: Dict[str, str], signature: str, secret: str) -> bool:
+    def _check_signature(fields: dict[str, str], signature: str, secret: str) -> bool:
         message = ",".join(
             f"{name}={fields[name]}" for name in SIGNED_FIELD_NAMES.split(",")
         )
@@ -165,7 +163,7 @@ class EsewaGateway(PaymentGateway):
     # verify — signature check + status confirmation
     # ------------------------------------------------------------------
 
-    def verify(self, params: Dict[str, str]) -> TransactionResult:
+    def verify(self, params: dict[str, str]) -> TransactionResult:
         """Verify an eSewa success/failure redirect.
 
         1. Signature check on the returned signed fields (forgery guard).
@@ -230,5 +228,5 @@ class EsewaGateway(PaymentGateway):
             raw=data,
         )
 
-    def webhook(self, body: Dict, signature: Optional[str] = None) -> TransactionResult:
+    def webhook(self, body: dict, signature: str | None = None) -> TransactionResult:
         return self.verify(body)

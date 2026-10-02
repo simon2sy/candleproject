@@ -1,16 +1,15 @@
 """Catalog API: categories, products, variants with seller isolation."""
-from django.db.models import Prefetch
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import PermissionDenied
 
 from accounts.models import SellerProfile
 from config.permissions import IsAdmin
+
 from .filters import ProductFilter
-from .models import Category, Product, ProductImage, ProductVariant
+from .models import Category, Product, ProductVariant
 from .serializers import (
     CategorySerializer,
     ProductDetailSerializer,
-    ProductImageSerializer,
     ProductListSerializer,
     ProductVariantSerializer,
     ProductWriteSerializer,
@@ -127,8 +126,8 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
         product_id = self.request.data.get("product")
         try:
             product = Product.objects.select_related("seller").get(pk=product_id)
-        except Product.DoesNotExist:
-            raise PermissionDenied("Product not found.")
+        except Product.DoesNotExist as exc:
+            raise PermissionDenied("Product not found.") from exc
         is_admin = user.is_staff or user.is_superuser or getattr(user, "role", "") == "ADMIN"
         if not is_admin:
             if getattr(user, "role", "") != "SELLER" or not user.is_seller_approved:

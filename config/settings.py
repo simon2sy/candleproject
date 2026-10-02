@@ -5,9 +5,8 @@ from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlparse
 
-from dotenv import load_dotenv
-
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

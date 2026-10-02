@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 from accounts.models import SellerProfile, User
-from catalog.models import Category, Product
+from catalog.models import Product
 
 
 def make_user(username, role=User.Roles.CUSTOMER, approved=False, **kw):

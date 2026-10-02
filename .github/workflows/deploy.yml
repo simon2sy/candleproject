@@ -1,0 +1,107 @@
+name: Deploy to Production
+
+# Fires only after the CI workflow finishes successfully on main. This is what
+# guarantees a broken commit can never reach the server — the previous manual
+# `git pull` had no such gate.
+on:
+  # Fires only after the CI workflow finishes successfully on main. This is what
+  # guarantees a broken commit can never reach the server — the previous manual
+  # `git pull` had no such gate.
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+  # Manual escape hatch: runs the same script, bypassing the CI trigger (but not
+  # the script's own safety checks).
+  workflow_dispatch:
+
+# Never run two releases at once — a half-finished migrate must not overlap
+# with another one.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to cPanel (Passenger)
+    # Runs only if CI succeeded and the commit is on main.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+      url: https://nismitacraftstudio.com
+
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # Only deploy/deploy.sh is needed locally; the server pulls the rest.
+          sparse-checkout: deploy
+          sparse-checkout-cone-mode: false
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          # DEPLOY_SSH_KEY is a repository secret holding a *deploy key* private
+          # key. It is NOT a personal access token: the key is scoped to this one
+          # repository and can be revoked without affecting your GitHub account.
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Pinning the host key prevents MITM. Populate this with the output of
+          #   ssh-keyscan -p 2222 YOUR_SERVER_HOST
+          # run from your own machine.
+          ssh-known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+      - name: Validate deploy script syntax
+        run: bash -n deploy/deploy.sh
+
+      - name: Deploy over SSH
+        env:
+          # Host-specific paths live in repository *variables*, not secrets and
+          # not in the workflow file.
+          APP_DIR: ${{ vars.DEPLOY_APP_DIR }}
+          VENV_ACTIVATE: ${{ vars.DEPLOY_VENV_ACTIVATE }}
+          BRANCH: main
+          SITE_URL: ${{ vars.SITE_URL }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          # The script is streamed over stdin so the server always runs the exact
+          # copy from the tested commit.
+          ssh \
+            -p "${DEPLOY_PORT:-2222}" \
+            -o StrictHostKeyChecking=yes \
+            -o BatchMode=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "APP_DIR='${APP_DIR}' VENV_ACTIVATE='${VENV_ACTIVATE}' BRANCH='${BRANCH}' SITE_URL='${SITE_URL}' bash -s" \
+            < deploy/deploy.sh
+
+      - name: Verify site is up
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          set -euo pipefail
+          curl --silent --fail --retry 5 --retry-delay 3 --retry-all-errors \
+            --max-time 20 "${SITE_URL}/readyz/"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deployment"
+            echo ""
+            echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`"
+            echo "- Branch: \`main\`"
+            echo "- Result: **${{ job.status }}**"
+            echo "- Site: ${{ vars.SITE_URL }}"
+          } >> "$GITHUB_STEP_SUMMARY"

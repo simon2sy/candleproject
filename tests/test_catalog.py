@@ -1,17 +1,16 @@
 """Catalog isolation, filtering, privacy, wishlist, order tests."""
 from decimal import Decimal
-
 from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
+from rest_framework.test import APIClient
 
 from accounts.models import Address, User
 from catalog.models import Category, Product
 from orders.models import Order, OrderItem, Wishlist, WishlistItem
-from rest_framework.test import APIClient
 
 from .helpers import login, make_product, make_seller, make_user
 

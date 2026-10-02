@@ -1,7 +1,6 @@
 """Orders serializers: wishlist + cart + orders."""
 from rest_framework import serializers
 
-from catalog.models import Product
 from .models import Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 
 

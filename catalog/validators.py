@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from PIL import Image, UnidentifiedImageError
 
-
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
@@ -31,7 +30,7 @@ class ProductImageValidator:
                 if image.width * image.height > MAX_IMAGE_PIXELS:
                     raise ValidationError("Product image dimensions are too large.")
                 image.verify()
-        except (UnidentifiedImageError, OSError, ValueError):
-            raise ValidationError("Upload a valid JPG, PNG or WebP image.")
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
+            raise ValidationError("Upload a valid JPG, PNG or WebP image.") from exc
         finally:
             uploaded_file.seek(0)

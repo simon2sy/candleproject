@@ -1,14 +1,12 @@
 """URL configuration for config project."""
-import re
 
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path, re_path
-from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.urls import include, path
 
 from config.health import healthz, readyz
 from storefront.seo import canonical_base

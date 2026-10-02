@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from accounts.models import SellerProfile, User
-from catalog.models import Category, Product
+from catalog.models import Product
 from orders.models import Order
 
 _VALID_PNG_B64 = (

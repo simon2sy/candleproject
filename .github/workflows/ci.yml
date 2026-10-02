@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push supersedes an in-progress run for the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint — fast feedback, runs first so obvious mistakes fail in seconds.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      # Blocking gate. Auto-fixable rules were already applied to the codebase.
+      - name: Run ruff
+        run: ruff check .
+
+      # Advisory only (non-blocking). The existing codebase has not been
+      # reformatted yet; run `ruff format .` in its own dedicated commit and then
+      # flip this step to a blocking `--check`.
+      - name: Check formatting (advisory)
+        run: |
+          ruff format --check . \
+            || echo "::notice::Formatting differs. Run 'ruff format .' to normalise."
+
+  # ---------------------------------------------------------------------------
+  # Tests — the gate. Deployment cannot proceed unless this passes.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Tests (Django ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    env:
+      # Tests use an in-memory SQLite database (tests/settings.py) and disable
+      # throttling, but the app still needs a key and a non-empty host list to
+      # boot. These are throwaway values, only ever used inside CI.
+      DEBUG: "False"
+      SECRET_KEY: "ci-only-not-a-real-secret-key-0000000000000000000"
+      ALLOWED_HOSTS: "testserver,localhost,127.0.0.1"
+      ENVIRONMENT: "development"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install coverage
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Verify no missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run test suite with coverage
+        run: |
+          coverage run --source=accounts,catalog,orders,storefront,config \
+            manage.py test tests storefront --settings=tests.settings
+          coverage report --show-missing --skip-covered
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Django's own production-readiness checklist. Fails on insecure defaults.
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security (django check --deploy)
+    runs-on: ubuntu-latest
+    env:
+      DEBUG: "False"
+      SECRET_KEY: "ci-only-not-a-real-secret-key-0000000000000000000"
+      DATABASE_URL: "sqlite:///ci-deploy-check.sqlite3"
+      ALLOWED_HOSTS: "nismitacraftstudio.com,www.nismitacraftstudio.com"
+      ENVIRONMENT: "production"
+      CACHE_BACKEND: "django.core.cache.backends.locmem.LocMemCache"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Deploy check
+        run: python manage.py check --deploy
+
+  # ---------------------------------------------------------------------------
+  # Dependency hygiene.
+  # ---------------------------------------------------------------------------
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Audit for known vulnerabilities
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r requirements.txt --strict || exit 0

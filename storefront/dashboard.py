@@ -6,9 +6,9 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
 from django.db import models, transaction
 from django.db.models import Count, Q, Sum
-from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
 from django.http import FileResponse, HttpResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
@@ -100,7 +100,10 @@ def _week_chart():
         days.append(total)
         labels.append(d.strftime("%a"))
     peak = max([float(v) for v in days] + [1.0])
-    return [{"label": l, "value": float(v), "pct": round(float(v) / peak * 100, 1)} for l, v in zip(labels, days)]
+    return [
+        {"label": label, "value": float(value), "pct": round(float(value) / peak * 100, 1)}
+        for label, value in zip(labels, days, strict=True)
+    ]
 
 
 def _home_context(request):
