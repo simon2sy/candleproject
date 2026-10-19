@@ -37,6 +37,7 @@ staticfiles/
 coverage.xml
 htmlcov/
 .tox/
+test_media/
 
 # Editors and OS
 .vscode/

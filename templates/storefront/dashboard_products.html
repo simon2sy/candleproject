@@ -16,14 +16,14 @@
 
   {% if low_stock %}
   <div class='notice-strip' id='low-stock'>
-    <a href='#low-stock'>📉 {{ low_stock|length }} product{{ low_stock|length|pluralize }} low on stock (5 or fewer) — listed first below, restock in Admin →</a>
+    <a href='#low-stock'>📉 {{ low_stock|length }} product{{ low_stock|length|pluralize }} low on stock (5 or fewer) — listed first below, restock with ✏️ Edit →</a>
   </div>
   {% endif %}
 
   <div class='table-card'>
     <div class='table-scroll'>
       <table class='modern-table'>
-        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Variants</th><th>Status</th></tr></thead>
+        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Variants</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {% for p in all_products %}
           <tr>
@@ -47,9 +47,10 @@
               {% endif %}
             </td>
             <td><span class='status-badge {% if p.is_active %}status-confirmed{% else %}status-cancelled{% endif %}'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></td>
+            <td><a class='btn btn-secondary btn-sm' href='/dashboard/product/{{ p.pk }}/edit/' title='Edit this product'>✏️ Edit</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan='6'><div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div></td></tr>
+          <tr><td colspan='7'><div class='empty-state'><p>No products yet — <a href='/dashboard/product/add/'>add your first product</a>.</p></div></td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -70,8 +71,9 @@
           <div class='mobile-order-item' style='align-items:flex-start'><span class='label'>Variants</span><span class='value'>{% for v in p.variants.all %}{{ v.name }} — {{ v.price|money }} · {{ v.stock_quantity }} left{% if not forloop.last %}<br>{% endif %}{% empty %}Base price only{% endfor %}</span></div>
           <div class='mobile-order-item'><span class='label'>Status</span><span class='value'>{% if p.is_active %}Live{% else %}Hidden{% endif %}</span></div>
         </div>
-        <div style='margin-top:10px'>
-          <div class='stock-track' style='max-width:100%'><div class='stock-fill {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% else %}ok{% endif %}' style='width:{% widthratio p.stock_quantity 20 100 %}%'></div></div>
+        <div style='margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap'>
+          <div class='stock-track' style='max-width:100%;flex:1;min-width:140px'><div class='stock-fill {% if p.stock_quantity <= 2 %}critical{% elif p.stock_quantity <= 5 %}low{% else %}ok{% endif %}' style='width:{% widthratio p.stock_quantity 20 100 %}%'></div></div>
+          <a class='btn btn-secondary btn-sm' href='/dashboard/product/{{ p.pk }}/edit/'>✏️ Edit</a>
         </div>
       </div>
       {% empty %}

@@ -125,34 +125,45 @@ def _home_context(request):
 
 def _blank_variant_row():
     """One empty variant row, so the form always shows a place to type."""
-    return {"name": "", "price": "", "stock": ""}
+    return {"id": "", "name": "", "price": "", "stock": ""}
 
 
 def _parse_variant_rows(request):
-    """Read the repeated variant rows (name / price / quantity) from POST.
+    """Read the repeated variant rows (id / name / price / quantity) from POST.
 
     Returns ``(rows, errors, parsed)``: ``rows`` keeps the raw typed values so
     the form can be re-rendered after an error, ``errors`` holds one plain
     message per problem (numbered like the rows the seller sees) and ``parsed``
-    holds the ready-to-save variants (``Decimal`` price, ``int`` quantity).
-    Untouched rows are skipped, so the empty row the form always renders is
-    harmless.
+    holds the ready-to-save variants (``id`` of the stored row when the form
+    posted one, ``Decimal`` price, ``int`` quantity).  Untouched rows are
+    skipped, so the empty row the form always renders is harmless — the hidden
+    id alone never keeps a row alive, so clearing a stored variant's fields
+    removes it from the product.
     """
     names = request.POST.getlist("variant_name")
     prices = request.POST.getlist("variant_price")
     stocks = request.POST.getlist("variant_stock")
+    ids = request.POST.getlist("variant_id")
     rows, errors, parsed, seen = [], [], [], set()
 
     for index in range(max(len(names), len(prices), len(stocks))):
         raw = {
+            "id": (ids[index] if index < len(ids) else "").strip(),
             "name": (names[index] if index < len(names) else "").strip(),
             "price": (prices[index] if index < len(prices) else "").strip(),
             "stock": (stocks[index] if index < len(stocks) else "").strip(),
         }
-        if not any(raw.values()):
+        if not any(raw[field] for field in ("name", "price", "stock")):
             continue
         label = f"Variant {index + 1}"
         rows.append(dict(raw))
+
+        variant_id = None
+        if raw["id"]:
+            try:
+                variant_id = int(raw["id"])
+            except ValueError:
+                errors.append(f"{label}: this row is not valid — reload the page and try again.")
 
         name = raw["name"]
         if not name:
@@ -192,7 +203,7 @@ def _parse_variant_rows(request):
                 stock = 0
 
         if name and price is not None:
-            parsed.append({"name": name, "price": price, "stock": stock})
+            parsed.append({"id": variant_id, "name": name, "price": price, "stock": stock})
 
     return rows, errors, parsed
 
@@ -225,25 +236,36 @@ def _store_profile(user):
     return profile
 
 
-def _add_product(request):
-    """Add a product straight from the dashboard: few fields, plain errors."""
-    values = {
+def _product_form_values(request):
+    """The plain product fields the dashboard's add and edit forms share."""
+    return {
         key: request.POST.get(key, "").strip()
         for key in ("name", "category", "price", "stock", "description")
     }
+
+
+def _validate_product_form(request, values, allow_category=None):
+    """Validate the shared add / edit fields.
+
+    Returns ``(errors, category, price, stock, valid_images, variants)`` and
+    fills ``values["variants"]`` with the raw rows so the form re-renders
+    exactly as typed.  ``allow_category`` is a primary key the caller accepts
+    even if that category has since been deactivated — an edit must be able to
+    keep the product's own category.
+    """
     errors = []
 
-    name = values["name"]
-    if not name:
+    if not values["name"]:
         errors.append("Enter a product name.")
 
     category = None
     if not values["category"]:
         errors.append("Choose a category.")
     else:
-        category = Category.objects.filter(pk=values["category"], is_active=True).first()
-        if category is None:
+        category = Category.objects.filter(pk=values["category"]).first()
+        if category is None or (not category.is_active and category.pk != allow_category):
             errors.append("The chosen category does not exist.")
+            category = None
 
     price = None
     if not values["price"]:
@@ -255,6 +277,10 @@ def _add_product(request):
                 raise ValueError
         except Exception:
             errors.append("Price must be a number like 999 or 999.50.")
+            price = None
+        # DecimalField(max_digits=10, decimal_places=2) can hold no more.
+        if price is not None and price >= Decimal("100000000"):
+            errors.append("Price is too large.")
             price = None
 
     stock = 0
@@ -289,8 +315,18 @@ def _add_product(request):
     values["variants"] = variant_rows
     errors.extend(variant_errors)
 
+    return errors, category, price, stock, valid_images, variants
+
+
+def _add_product(request):
+    """Add a product straight from the dashboard: few fields, plain errors."""
+    values = _product_form_values(request)
+    errors, category, price, stock, valid_images, variants = _validate_product_form(request, values)
+
     if errors:
         return _add_product_page(request, errors, values)
+
+    name = values["name"]
 
     with transaction.atomic():
         base_slug = slugify(name) or "product"
@@ -344,6 +380,173 @@ def _add_product(request):
     return redirect("storefront:dashboard-products")
 
 
+def _edit_product_values(product):
+    """Current stored values as the strings the edit form posts back."""
+    return {
+        "name": product.name,
+        "category": str(product.category_id),
+        "price": str(product.price),
+        "stock": str(product.stock_quantity),
+        "description": product.description,
+        "is_active": product.is_active,
+        "is_featured": product.is_featured,
+        "variants": [
+            {"id": str(v.pk), "name": v.name, "price": str(v.price), "stock": str(v.stock_quantity)}
+            for v in product.variants.all()
+        ] or [_blank_variant_row()],
+    }
+
+
+def _edit_image_rows(product, removed_ids=()):
+    """The product's photos for the edit form, with the ticked-to-delete state."""
+    removed = {str(pk) for pk in removed_ids}
+    return [
+        {"id": image.pk, "url": image.image.url, "primary": image.is_primary, "removed": str(image.pk) in removed}
+        for image in product.images.all()
+    ]
+
+
+def _edit_product_page(request, product, errors=None, values=None):
+    """Render the edit page; ``values`` keeps what was typed after an error."""
+    values = values if values is not None else _edit_product_values(product)
+    ctx = {
+        "product": product,
+        # The product's own category stays selectable even if it was deactivated.
+        "categories": Category.objects.filter(Q(is_active=True) | Q(pk=product.category_id)).order_by("name"),
+        "form_errors": errors or [],
+        "form_values": values,
+        "variant_rows": values.get("variants") or [_blank_variant_row()],
+        "image_rows": _edit_image_rows(product, values.get("removed_images", ())),
+    }
+    ctx.update(_nav(request))
+    return render(request, "storefront/dashboard_edit_product.html", ctx)
+
+
+def _edit_product(request, product):
+    """Apply the edit form: same validation as add, then sync variants/photos."""
+    values = _product_form_values(request)
+    errors, category, price, stock, valid_images, variants = _validate_product_form(
+        request, values, allow_category=product.category_id
+    )
+    values["is_active"] = request.POST.get("is_active") == "1"
+    values["is_featured"] = request.POST.get("is_featured") == "1"
+
+    remove_ids = []
+    for pk in request.POST.getlist("remove_image"):
+        try:
+            remove_ids.append(int(pk))
+        except (TypeError, ValueError):
+            continue
+    values["removed_images"] = [str(pk) for pk in remove_ids]
+
+    # The form posts a marker with the variant section, so a submission without
+    # it (a partial or hand-built POST) can never wipe the stored variants.
+    sync_variants = request.POST.get("variant_sync") == "1"
+    kept_variant_ids = set()
+    if sync_variants and not errors:
+        own_variant_ids = set(product.variants.values_list("pk", flat=True))
+        for row in variants:
+            variant_id = row.get("id")
+            if variant_id is None:
+                continue
+            if variant_id not in own_variant_ids:
+                errors.append(
+                    "A variant row points at a variant that is not part of this product — "
+                    "reload the page and try again."
+                )
+                break
+            kept_variant_ids.add(variant_id)
+
+    if sync_variants and not errors:
+        # Order lines keep their variant forever (PROTECT), so one that was
+        # ever bought must stay — explain instead of crashing on delete.
+        ordered_names = (
+            OrderItem.objects.filter(variant__product=product)
+            .exclude(variant_id__in=kept_variant_ids)
+            .values_list("variant__name", flat=True)
+            .distinct()
+        )
+        if ordered_names:
+            listed = ", ".join(f"“{name}”" for name in ordered_names)
+            errors.append(
+                f"{listed} already appear in past orders, so those variants can't be removed — "
+                "keep their rows instead."
+            )
+
+    if product.images.exclude(pk__in=remove_ids).count() + len(valid_images) > 8:
+        errors.append("A product can have at most 8 photos — untick more before saving.")
+
+    if errors:
+        if not sync_variants and "variant_name" not in request.POST:
+            # Nothing about the variants was posted: show the stored rows again.
+            values["variants"] = _edit_product_values(product)["variants"]
+        return _edit_product_page(request, product, errors, values)
+
+    with transaction.atomic():
+        product.category = category
+        product.name = values["name"]
+        product.short_description = values["description"][:500]
+        product.description = values["description"]
+        product.price = price
+        product.stock_quantity = stock
+        product.is_active = values["is_active"]
+        product.is_featured = values["is_featured"]
+        product.save()
+
+        if sync_variants:
+            existing = {v.pk: v for v in product.variants.all()}
+            used_skus = {v.sku for v in existing.values()}
+            sequence = 1
+            for row in variants:
+                stored = existing.get(row.get("id"))
+                if stored is not None:
+                    stored.name = row["name"]
+                    stored.price = row["price"]
+                    stored.stock_quantity = row["stock"]
+                    stored.save()
+                    continue
+                sku = f"{product.sku}-V{sequence:02d}"
+                while sku in used_skus:
+                    sequence += 1
+                    sku = f"{product.sku}-V{sequence:02d}"
+                used_skus.add(sku)
+                sequence += 1
+                ProductVariant.objects.create(
+                    product=product,
+                    name=row["name"],
+                    sku=sku,
+                    price=row["price"],
+                    stock_quantity=row["stock"],
+                    is_active=True,
+                )
+            doomed_ids = set(existing) - kept_variant_ids
+            if doomed_ids:
+                product.variants.filter(pk__in=doomed_ids).delete()
+
+        if remove_ids:
+            for image in product.images.filter(pk__in=remove_ids):
+                image.image.delete(save=False)
+                image.delete()
+        next_order = product.images.count()
+        for offset, image in enumerate(valid_images):
+            ProductImage.objects.create(
+                product=product,
+                image=image,
+                alt_text=product.name,
+                is_primary=False,
+                display_order=next_order + offset,
+            )
+        # Exactly one cover photo: promote the first one left if the old cover
+        # was ticked for deletion.
+        remaining = list(product.images.order_by("display_order", "pk"))
+        if remaining and not any(image.is_primary for image in remaining):
+            remaining[0].is_primary = True
+            remaining[0].save(update_fields=["is_primary"])
+
+    messages.success(request, f"“{product.name}” was updated.")
+    return redirect("storefront:dashboard-products")
+
+
 @staff_member_required
 def dashboard_payment_screenshot(request, pk):
     """Serve payment screenshots to staff without exposing the media directory."""
@@ -364,6 +567,15 @@ def dashboard_add_product(request):
     if request.method == "POST":
         return _add_product(request)
     return _add_product_page(request)
+
+
+@staff_member_required
+def dashboard_edit_product(request, pk):
+    """Edit an existing product from the dashboard (same form as add)."""
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == "POST":
+        return _edit_product(request, product)
+    return _edit_product_page(request, product)
 
 
 @staff_member_required

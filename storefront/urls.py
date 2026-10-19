@@ -31,6 +31,7 @@ urlpatterns = [
     path("contact/", views.contact, name="contact"),
     path("dashboard/", dashboard.dashboard_home, name="dashboard"),
     path("dashboard/product/add/", dashboard.dashboard_add_product, name="dashboard-add-product"),
+    path("dashboard/product/<int:pk>/edit/", dashboard.dashboard_edit_product, name="dashboard-edit-product"),
     path("dashboard/products/", dashboard.dashboard_products, name="dashboard-products"),
     path("dashboard/report/", dashboard.dashboard_report, name="dashboard-report"),
     path("dashboard/sales/", RedirectView.as_view(url="/dashboard/report/", permanent=False), name="dashboard-sales"),

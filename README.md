@@ -57,6 +57,13 @@ DATABASE_URL=postgres://candle_user:candle_pass@localhost:5432/candle_ecommerce
 ## Admin (/admin/)
 Users (approve/unapprove actions), SellerProfiles (verify), Addresses, Categories, Products (+variant/image/attribute inlines), InventoryLog, Wishlists, Orders (+items inline, status filter).
 
+## Staff dashboard (/dashboard/)
+Sales overview, order confirmation, sales reports and product management.
+`/dashboard/product/add/` creates a product; `/dashboard/product/<id>/edit/`
+updates its name, category, price, stock, description, variants, photos and
+visibility (slug/SKU stay fixed so shop links never break). Bought variants
+can't be deleted — the edit form says so instead.
+
 ## Tests
 ```powershell
 python manage.py test tests -v 2

@@ -60,7 +60,11 @@ jobs:
       # throttling, but the app still needs a key and a non-empty host list to
       # boot. These are throwaway values, only ever used inside CI.
       DEBUG: "False"
-      SECRET_KEY: "ci-only-not-a-real-secret-key-0000000000000000000"
+      SECRET_KEY: "ci-only-not-a-real-secret-key-000000000000000000000000000000000000000"
+      # config.settings refuses DEBUG=False without a DATABASE_URL.  Never
+      # connected: `check` / `makemigrations` don't open sockets, and the suite
+      # itself runs on in-memory SQLite (tests/settings.py).
+      DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci_check"
       ALLOWED_HOSTS: "testserver,localhost,127.0.0.1"
       ENVIRONMENT: "development"
 
@@ -106,8 +110,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEBUG: "False"
-      SECRET_KEY: "ci-only-not-a-real-secret-key-0000000000000000000"
-      DATABASE_URL: "sqlite:///ci-deploy-check.sqlite3"
+      SECRET_KEY: "ci-only-not-a-real-secret-key-000000000000000000000000000000000000000"
+      # config.settings only accepts postgres:// or mysql:// URLs (a sqlite://
+      # URL is rejected at boot).  Never connected: `check --deploy` doesn't
+      # open sockets, it only reads the settings.
+      DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci_deploy_check"
       ALLOWED_HOSTS: "nismitacraftstudio.com,www.nismitacraftstudio.com"
       ENVIRONMENT: "production"
       CACHE_BACKEND: "django.core.cache.backends.locmem.LocMemCache"
