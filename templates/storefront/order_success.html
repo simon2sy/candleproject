@@ -9,7 +9,7 @@
 {% if order.payment_status == 'VERIFIED' %}
 <div style="background:#ecfdf5;border:1px solid #2e9e5b;border-radius:18px;padding:20px">
 <h3>💰 Payment verified — nothing left to pay</h3>
-<p style="color:var(--muted)">We received <b>{{ order.total|money }}</b> via <b>{{ order.get_payment_method_display }}</b> for {{ order.order_number }}. Your order is <b>{{ order.get_status_display }}</b> and dispatches within 5–6 days — track it in <a href="/orders/">My Orders</a>.</p>
+<p style="color:var(--muted)">We received <b>{{ order.total|money }}</b> via <b>{{ order.get_payment_method_display }}</b> for {{ order.order_number }}. Your order is <b>{{ order.get_status_display }}</b> and dispatches within 2–3 days — track it in <a href="/orders/">My Orders</a>.</p>
 </div>
 {% else %}
 <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px">
@@ -19,7 +19,7 @@
 <p>2️⃣ <b>Send the payment screenshot on WhatsApp</b> 👇</p>
 <a class="btn" style="background:#25D366;border-color:#25D366;display:inline-flex;gap:10px;align-items:center" href="{{ wa_url }}" target="_blank" rel="noopener">💬 Send screenshot & order details on WhatsApp</a>
 <h3 style="margin-top:18px">3️⃣ Admin confirms your order</h3>
-<p style="color:var(--muted)">Once we verify your payment on WhatsApp, your order status changes to <b>Confirmed</b> and we dispatch within 5–6 days. You can track it in <a href="/orders/">My Orders</a>.</p>
+<p style="color:var(--muted)">Once we verify your payment on WhatsApp, your order status changes to <b>Confirmed</b> and we dispatch within 2–3 days. You can track it in <a href="/orders/">My Orders</a>.</p>
 <form method="post" enctype="multipart/form-data" style="margin-top:10px;border-top:1px dashed var(--line);padding-top:12px">{% csrf_token %}
 <b>Or upload your screenshot here</b> (optional backup):<br>
 <input type="file" name="payment_screenshot" accept="image/*" style="margin:8px 0"> <button class="btn ghost">Upload</button>
